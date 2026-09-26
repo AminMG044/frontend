@@ -9,3 +9,4 @@ export { useCreatorBalance, type CreatorBalance } from './use-creator-balance';
 export { useTransactionHistory, type Transaction } from './use-transaction-history';
 export { useAuthHydration, type UseAuthHydrationResult } from './use-auth-hydration';
 export { useCreatorAnalytics } from './use-creator-analytics';
+export { useDebounce } from './use-debounce';

@@ -40,7 +40,12 @@ function CreatorDiscoveryPageContent() {
 
       {/* Search and Filters */}
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <CreatorSearchBar filters={filters} onChange={setFilter} onReset={resetFilters} />
+        <CreatorSearchBar
+          filters={filters}
+          onChange={setFilter}
+          onReset={resetFilters}
+          creators={creators}
+        />
 
         {/* Results Count */}
         <p className="text-muted-foreground mb-6">
