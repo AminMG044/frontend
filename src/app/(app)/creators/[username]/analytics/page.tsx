@@ -21,7 +21,7 @@ import { LiveMetricsCards } from '@/components/sections/live-metrics-cards';
 import { LiveActivityFeed } from '@/components/sections/live-activity-feed';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { downloadAnalyticsCsv } from '@/lib/csv-export';
+import { downloadAnalyticsCsv, downloadAnalyticsExcel, printAnalyticsPdf } from '@/lib/csv-export';
 import type { AnalyticsDateRangePreset } from '@/types';
 
 const ChartLoading = (): JSX.Element => (
@@ -31,12 +31,18 @@ const ChartLoading = (): JSX.Element => (
 );
 
 const EarningsTrendChart = dynamic(
-  () => import('@/components/sections/earnings-trend-chart').then((module) => module.EarningsTrendChart),
+  () =>
+    import('@/components/sections/earnings-trend-chart').then(
+      (module) => module.EarningsTrendChart
+    ),
   { ssr: false, loading: ChartLoading }
 );
 
 const TipSourceBreakdown = dynamic(
-  () => import('@/components/sections/tip-source-breakdown').then((module) => module.TipSourceBreakdown),
+  () =>
+    import('@/components/sections/tip-source-breakdown').then(
+      (module) => module.TipSourceBreakdown
+    ),
   { ssr: false, loading: ChartLoading }
 );
 
@@ -77,10 +83,20 @@ export default function CreatorAnalyticsPage(): JSX.Element {
   function handleExportCsv(): void {
     if (!data) return;
     const suffix =
-      range === 'custom'
-        ? `${customRange.startDate}-to-${customRange.endDate}`
-        : range;
+      range === 'custom' ? `${customRange.startDate}-to-${customRange.endDate}` : range;
     downloadAnalyticsCsv(data, `dorisio-analytics-${username}-${suffix}.csv`);
+  }
+
+  function handleExportExcel(): void {
+    if (!data) return;
+    const suffix =
+      range === 'custom' ? `${customRange.startDate}-to-${customRange.endDate}` : range;
+    downloadAnalyticsExcel(data, `dorisio-analytics-${username}-${suffix}.xls`);
+  }
+
+  function handleExportPdf(): void {
+    if (!data) return;
+    printAnalyticsPdf(data, `${username} Creator Analytics`);
   }
 
   return (
@@ -110,6 +126,22 @@ export default function CreatorAnalyticsPage(): JSX.Element {
             disabled={!data || isLoading}
           >
             Export CSV
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={!data || isLoading}
+          >
+            Export Excel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportPdf}
+            disabled={!data || isLoading}
+          >
+            Export PDF
           </Button>
         </div>
       </div>

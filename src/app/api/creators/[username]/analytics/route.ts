@@ -124,11 +124,7 @@ const TIPPER_NAMES = [
   'Mia L.',
 ];
 
-function buildTopTippers(
-  username: string,
-  range: string,
-  now: Date
-): TopTipper[] {
+function buildTopTippers(username: string, range: string, now: Date): TopTipper[] {
   const random = seededRandom(`${username}:${range}:tippers`);
 
   return TIPPER_NAMES.map((name, i) => {
