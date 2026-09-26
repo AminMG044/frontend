@@ -11,6 +11,8 @@ import { useParams } from 'next/navigation';
 import { Creator } from '@/types';
 import { useDorisio } from 'dorisio-sdk/react';
 import { formatCurrency } from '@/utils/formatters';
+import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
+import { CreatorBio } from '@/components/sections/creator-bio';
 import DorisioButton from '@/components/sections/dorisio-button';
 
 interface EmbedWidgetState {
@@ -94,10 +96,20 @@ export default function EmbedTipWidget(): JSX.Element {
                   </span>
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="font-semibold text-sm truncate">{state.creator.displayName}</p>
-                <p className="text-xs text-muted-foreground">@{state.creator.username}</p>
-              </div>
+               <div className="min-w-0">
+                 <div className="flex items-center gap-2 min-w-0">
+                   <p className="font-semibold text-sm truncate">{state.creator.displayName}</p>
+                   <CreatorVerificationBadge
+                     verified={state.creator.verified}
+                     status={state.creator.verificationStatus}
+                     verifiedAt={state.creator.verifiedAt}
+                     verificationType={state.creator.verificationType}
+                     verificationReason={state.creator.verificationReason}
+                     compact
+                   />
+                 </div>
+                 <p className="text-xs text-muted-foreground">@{state.creator.username}</p>
+               </div>
             </div>
             <a
               href={`https://dorisio.io/creators/${state.creator.username}`}
@@ -115,9 +127,7 @@ export default function EmbedTipWidget(): JSX.Element {
           {/* Creator Info */}
           <div className="bg-background rounded-lg p-4 mb-4 border">
             <h2 className="font-semibold mb-2">{state.creator.displayName}</h2>
-            {state.creator.bio && (
-              <p className="text-sm text-muted-foreground line-clamp-3">{state.creator.bio}</p>
-            )}
+            {state.creator.bio && <CreatorBio value={state.creator.bio} className="line-clamp-3 text-sm text-muted-foreground" />}
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3 mt-4">

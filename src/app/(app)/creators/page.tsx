@@ -8,7 +8,10 @@
 import { Suspense } from 'react';
 import { useCreatorInfiniteScroll } from '@/hooks/use-creator-infinite-scroll';
 import { CreatorSearchBar } from '@/components/sections/creator-search-bar';
-import { CreatorInfiniteScroll } from '@/components/sections/creator-infinite-scroll';
+import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
+import { CreatorBio } from '@/components/sections/creator-bio';
+import DorisioButton from '@/components/sections/dorisio-button';
+import Link from 'next/link';
 
 export default function CreatorDiscoveryPage() {
   return (
@@ -59,14 +62,107 @@ function CreatorDiscoveryPageContent() {
           </div>
         )}
 
-        {/* Infinite Scroll Container */}
-        <CreatorInfiniteScroll
-          creators={creators}
-          isLoading={isLoading}
-          isFetchingNextPage={isFetchingNextPage}
-          hasNextPage={hasNextPage}
-          onLoadMore={fetchNextPage}
-        />
+        {/* Creators Grid */}
+        {!isLoading && !error && creators.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {creators.map((creator) => (
+              <Link key={creator.id} href={`/creators/${creator.username}`}>
+                <div className="border rounded-lg overflow-hidden hover:shadow-lg transition h-full bg-card">
+                  {/* Card Header */}
+                  <div className="h-24 bg-gradient-to-r from-primary/20 to-secondary/20"></div>
+
+                  {/* Card Content */}
+                  <div className="p-6 -mt-8 relative">
+                    {/* Avatar */}
+                    <div className="mb-4">
+                      {creator.avatar ? (
+                        <img
+                          src={creator.avatar}
+                          alt={creator.displayName}
+                          className="w-16 h-16 rounded-full object-cover border-4 border-background"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center border-4 border-background">
+                          <span className="text-xl font-bold text-primary">
+                            {creator.displayName?.charAt(0) || '?'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Name and Verification */}
+                    <div className="mb-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-1 min-w-0">
+                        <h3 className="font-bold text-lg min-w-0 break-words">
+                          {creator.displayName}
+                        </h3>
+                        <CreatorVerificationBadge
+                          verified={creator.verified}
+                          status={creator.verificationStatus}
+                          verifiedAt={creator.verifiedAt}
+                          verificationType={creator.verificationType}
+                          verificationReason={creator.verificationReason}
+                          compact
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground">@{creator.username}</p>
+                    </div>
+
+                    {/* Bio */}
+                    {creator.bio && <CreatorBio value={creator.bio} className="mb-4 line-clamp-2 text-sm text-muted-foreground" />}
+
+                    {/* Stats */}
+                    <div className="bg-muted rounded-lg p-3 mb-4 text-sm">
+                      <p className="text-muted-foreground">Total Earnings</p>
+                      <p className="font-bold">{formatCurrency(creator.totalEarnings)}</p>
+                    </div>
+
+                    {/* Tip Button */}
+                    <DorisioButton
+                      creatorId={creator.id}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!isLoading && !error && creators.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => setFilter('page', Math.max(1, filters.page - 1))}
+              disabled={filters.page === 1}
+              className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-muted transition"
+            >
+              ← Prev
+            </button>
+            <span className="text-sm text-muted-foreground px-2">
+              Page {filters.page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setFilter('page', Math.min(totalPages, filters.page + 1))}
+              disabled={filters.page >= totalPages}
+              className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-muted transition"
+            >
+              Next →
+            </button>
+          </div>
+        )}
+
+        {/* No Results */}
+        {!isLoading && !error && creators.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">No creators found</p>
+            <button onClick={resetFilters} className="text-primary hover:underline">
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

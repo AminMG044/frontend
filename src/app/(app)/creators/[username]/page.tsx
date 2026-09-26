@@ -20,6 +20,11 @@ import {
   ProfileHeaderSkeleton,
   TransactionTableSkeleton,
 } from '@/components/shared/creator-skeletons';
+import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
+import { CreatorBio } from '@/components/sections/creator-bio';
+import { SubscriptionTiers } from '@/components/sections/subscription-tiers';
+import { SubscriberOnlyContent } from '@/components/sections/subscriber-only-content';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface CreatorPageState {
   creator: Creator | null;
@@ -31,6 +36,7 @@ export default function CreatorProfilePage(): JSX.Element {
   const params = useParams();
   const username = params.username as string;
   const { client } = useDorisio();
+  const user = useAuthStore((state) => state.user);
 
   const [state, setState] = useState<CreatorPageState>({
     creator: null,
@@ -101,9 +107,9 @@ export default function CreatorProfilePage(): JSX.Element {
       {/* Header Section */}
       <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b">
         <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="flex gap-8 items-start">
+          <div className="flex flex-col gap-6 sm:flex-row sm:gap-8 items-start">
             {/* Avatar */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 self-center sm:self-auto">
               {state.creator.avatar ? (
                 <img
                   src={state.creator.avatar}
@@ -120,19 +126,24 @@ export default function CreatorProfilePage(): JSX.Element {
             </div>
 
             {/* Creator Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">{state.creator.displayName}</h1>
-                {state.creator.verified && (
-                  <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                    ✓ Verified
-                  </span>
-                )}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-start gap-3 mb-2">
+                <h1 className="text-3xl font-bold min-w-0 break-words">
+                  {state.creator.displayName}
+                </h1>
+                <CreatorVerificationBadge
+                  verified={state.creator.verified}
+                  status={state.creator.verificationStatus}
+                  verifiedAt={state.creator.verifiedAt}
+                  verificationType={state.creator.verificationType}
+                  verificationReason={state.creator.verificationReason}
+                  showDetails
+                />
               </div>
 
               <p className="text-muted-foreground mb-4">@{state.creator.username}</p>
 
-              {state.creator.bio && <p className="text-lg mb-6 max-w-2xl">{state.creator.bio}</p>}
+              {state.creator.bio && <CreatorBio value={state.creator.bio} className="mb-6 max-w-2xl text-lg" />}
 
               <div className="flex gap-8 mb-6">
                 <div>
@@ -151,6 +162,7 @@ export default function CreatorProfilePage(): JSX.Element {
 
               {/* Tip Button */}
               <DorisioButton creatorId={state.creator.id} />
+              <SubscriptionTiers creatorId={state.creator.id} subscriberId={user?.id} />
             </div>
           </div>
         </div>
@@ -158,6 +170,12 @@ export default function CreatorProfilePage(): JSX.Element {
 
       {/* Content Section */}
       <div className="max-w-4xl mx-auto px-4 py-12">
+        <SubscriberOnlyContent creatorId={state.creator.id} subscriberId={user?.id}>
+          <div className="rounded-lg border bg-card p-6">
+            <h2 className="font-semibold">Welcome, member</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Thanks for supporting this creator.</p>
+          </div>
+        </SubscriberOnlyContent>
         {/* Earnings Overview */}
         {balance.balance && (
           <section className="mb-12">

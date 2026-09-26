@@ -6,6 +6,7 @@
 
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -15,8 +16,6 @@ import { useLiveAnalytics } from '@/hooks/use-live-analytics';
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications';
 import { AnalyticsSummaryCards } from '@/components/sections/analytics-summary-cards';
 import { AnalyticsDateRangePicker } from '@/components/sections/analytics-date-range-picker';
-import { EarningsTrendChart } from '@/components/sections/earnings-trend-chart';
-import { TipSourceBreakdown } from '@/components/sections/tip-source-breakdown';
 import { TopTippersTable } from '@/components/sections/top-tippers-table';
 import { LiveMetricsCards } from '@/components/sections/live-metrics-cards';
 import { LiveActivityFeed } from '@/components/sections/live-activity-feed';
@@ -25,12 +24,31 @@ import { Card } from '@/components/ui/card';
 import { downloadAnalyticsCsv } from '@/lib/csv-export';
 import type { AnalyticsDateRangePreset } from '@/types';
 
+const ChartLoading = (): JSX.Element => (
+  <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+    Loading chart...
+  </div>
+);
+
+const EarningsTrendChart = dynamic(
+  () => import('@/components/sections/earnings-trend-chart').then((module) => module.EarningsTrendChart),
+  { ssr: false, loading: ChartLoading }
+);
+
+const TipSourceBreakdown = dynamic(
+  () => import('@/components/sections/tip-source-breakdown').then((module) => module.TipSourceBreakdown),
+  { ssr: false, loading: ChartLoading }
+);
+
 export default function CreatorAnalyticsPage(): JSX.Element {
   const params = useParams();
   const router = useRouter();
   const username = params.username as string;
   const user = useAuthStore((state) => state.user);
+  const today = new Date().toISOString().slice(0, 10);
+  const thirtyDaysAgo = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const [range, setRange] = useState<AnalyticsDateRangePreset>('30d');
+  const [customRange, setCustomRange] = useState({ startDate: thirtyDaysAgo, endDate: today });
 
   const { data, isLoading, isError, error } = useCreatorAnalytics(username, range);
   const liveMetrics = useLiveAnalytics(username);
@@ -58,7 +76,11 @@ export default function CreatorAnalyticsPage(): JSX.Element {
 
   function handleExportCsv(): void {
     if (!data) return;
-    downloadAnalyticsCsv(data, `dorisio-analytics-${username}-${range}.csv`);
+    const suffix =
+      range === 'custom'
+        ? `${customRange.startDate}-to-${customRange.endDate}`
+        : range;
+    downloadAnalyticsCsv(data, `dorisio-analytics-${username}-${suffix}.csv`);
   }
 
   return (
@@ -72,17 +94,15 @@ export default function CreatorAnalyticsPage(): JSX.Element {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded ${
-              isLiveConnected
-                ? 'bg-green-100 text-green-700'
-                : 'bg-muted text-muted-foreground'
-            }`}
-            title={isLiveConnected ? 'Connected to live updates' : 'Not receiving live updates'}
-          >
-            {isLiveConnected ? '● Live' : '● Offline'}
-          </span>
-          <AnalyticsDateRangePicker value={range} onChange={setRange} />
+          <AnalyticsDateRangePicker
+            value={range}
+            startDate={customRange.startDate}
+            endDate={customRange.endDate}
+            onChange={setRange}
+            onCustomDateChange={(field, value) =>
+              setCustomRange((current) => ({ ...current, [field]: value }))
+            }
+          />
           <Button
             type="button"
             variant="outline"
