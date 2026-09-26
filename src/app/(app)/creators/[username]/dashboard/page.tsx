@@ -12,6 +12,8 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCreatorBalance } from '@/hooks/use-creator-balance';
 import { useTransactionHistory } from '@/hooks/use-transaction-history';
 import { useTransactionFilter } from '@/hooks/use-transaction-filter';
+import { TransactionFilterBar } from '@/components/sections/transaction-filter-bar';
+import { TransactionVerification } from '@/components/sections/transaction-verification';
 import { useWallet } from '@/hooks/use-wallet';
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications';
 import { formatCurrency, formatDate, getStatusColor } from '@/utils/formatters';
@@ -19,7 +21,9 @@ import {
   EarningsCardSkeleton,
   TransactionTableSkeleton,
 } from '@/components/shared/creator-skeletons';
+import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
 import Link from 'next/link';
+import { SubscriptionManagement } from '@/components/sections/subscription-management';
 
 export default function CreatorDashboardPage() {
   return (
@@ -45,7 +49,9 @@ function CreatorDashboardPageContent() {
     setPageSize,
     loading: transactionsLoading,
     error: transactionsError,
-  } = useTransactionHistory(username);
+  } = useTransactionHistory(username, 1, 20);
+  const { filters, setFilter, resetFilters, filteredTransactions, exportToCsv } =
+    useTransactionFilter(transactions);
   const {
     wallets,
     loading: walletLoading,
@@ -98,6 +104,30 @@ function CreatorDashboardPageContent() {
         </span>
       </div>
 
+      <SubscriptionManagement creatorId={username} />
+
+      <section aria-labelledby="creator-verification-heading" className="border rounded-lg p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 id="creator-verification-heading" className="font-semibold">
+              Creator verification
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Your verification status is shown to supporters on your public profile.
+            </p>
+          </div>
+          <CreatorVerificationBadge
+            verified={Boolean(user.verified)}
+            status={user.verificationStatus ?? (user.verified ? 'verified' : 'unverified')}
+            verifiedAt={user.verifiedAt}
+            verificationType={user.verificationType}
+            verificationReason={user.verificationReason}
+            showDetails
+            showUnverified
+          />
+        </div>
+      </section>
+
       {/* Earnings Overview Cards */}
       {balanceError && !balanceLoading && (
         <div
@@ -125,9 +155,7 @@ function CreatorDashboardPageContent() {
           {/* Available Balance */}
           <div className="bg-background border rounded-lg p-6 space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Available Balance</h3>
-            <p className="text-3xl font-bold">
-              {formatCurrency(balance?.availableBalance || 0)}
-            </p>
+            <p className="text-3xl font-bold">{formatCurrency(balance?.availableBalance || 0)}</p>
             <p className="text-xs text-muted-foreground">Ready to withdraw</p>
           </div>
 
@@ -145,12 +173,15 @@ function CreatorDashboardPageContent() {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Transaction History</h2>
           <select
+            aria-label="Transactions per page"
+            value={pageSize}
             onChange={(e) => setPageSize(parseInt(e.target.value))}
             className="px-3 py-1 border rounded text-sm"
           >
             <option value="10">10 per page</option>
-            <option value="25">25 per page</option>
+            <option value="20">20 per page</option>
             <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
           </select>
         </div>
 
@@ -187,25 +218,29 @@ function CreatorDashboardPageContent() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.length === 0 ? (
+                {filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      No transactions yet
+                      {transactions.length === 0
+                        ? 'No transactions yet'
+                        : 'No transactions match the current filters'}
                     </td>
                   </tr>
                 ) : (
-                  transactions.map((tx) => (
+                  filteredTransactions.map((tx) => (
                     <tr key={tx.id} className="border-b hover:bg-muted/30 transition">
                       <td className="px-4 py-3">{formatDate(tx.createdAt)}</td>
                       <td className="px-4 py-3 font-semibold">{formatCurrency(tx.amount)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground truncate">
                         {tx.senderUsername || `${(tx.senderId || '').slice(0, 8)}...`}
                       </td>
-                      <td className="px-4 py-3 text-sm max-w-xs truncate">
+                      <td className="px-4 py-3 min-w-56">
                         {tx.message ? (
-                          <span title={tx.message}>{tx.message}</span>
+                          <p className="max-w-xs truncate text-sm" title={tx.message}>
+                            {tx.message}
+                          </p>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -219,15 +254,21 @@ function CreatorDashboardPageContent() {
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground truncate">
                         {tx.transactionHash ? (
-                          <a
-                            href={`https://stellar.expert/explorer/testnet/tx/${tx.transactionHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-primary"
-                            title={tx.transactionHash}
-                          >
-                            {tx.transactionHash.slice(0, 8)}...
-                          </a>
+                          <div className="space-y-1">
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/tx/${tx.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-primary"
+                              title={tx.transactionHash}
+                            >
+                              {tx.transactionHash.slice(0, 8)}...
+                            </a>
+                            <TransactionVerification
+                              transactionId={tx.id}
+                              transactionHash={tx.transactionHash}
+                            />
+                          </div>
                         ) : (
                           '-'
                         )}

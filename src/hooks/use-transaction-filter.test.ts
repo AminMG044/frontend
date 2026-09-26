@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { applyTransactionFilters, transactionsToCsv } from './use-transaction-filter';
 import type { Transaction } from './use-transaction-history';
 import type { TransactionFilterState } from './use-transaction-filter';
@@ -8,6 +8,7 @@ const baseFilters: TransactionFilterState = {
   dateTo: '',
   minAmount: '',
   maxAmount: '',
+  messageKeyword: '',
   status: 'all',
   sortField: 'date',
   sortDirection: 'desc',
@@ -20,6 +21,7 @@ const transactions: Transaction[] = [
     status: 'confirmed',
     createdAt: '2026-01-01T00:00:00Z',
     senderUsername: 'alice',
+    message: 'Amazing tutorial',
   },
   {
     id: '2',
@@ -76,6 +78,23 @@ describe('applyTransactionFilters', () => {
     expect(result.map((t) => t.id)).toEqual(['3']);
   });
 
+  it('includes transactions later on the selected end date', () => {
+    const result = applyTransactionFilters(
+      [
+        ...transactions,
+        {
+          id: '4',
+          amount: 15,
+          status: 'confirmed',
+          createdAt: '2026-01-12T20:00:00Z',
+        },
+      ],
+      { ...baseFilters, dateFrom: '2026-01-12', dateTo: '2026-01-12' }
+    );
+
+    expect(result.map((t) => t.id)).toEqual(['4']);
+  });
+
   it('sorts by amount ascending', () => {
     const result = applyTransactionFilters(transactions, {
       ...baseFilters,
@@ -92,6 +111,14 @@ describe('applyTransactionFilters', () => {
       sortDirection: 'desc',
     });
     expect(result.map((t) => t.id)).toEqual(['2', '3', '1']);
+  });
+
+  it('filters by message keyword', () => {
+    const result = applyTransactionFilters(transactions, {
+      ...baseFilters,
+      messageKeyword: 'tutorial',
+    });
+    expect(result.map((t) => t.id)).toEqual(['1']);
   });
 
   it('combines multiple filters together', () => {
@@ -121,7 +148,7 @@ describe('transactionsToCsv', () => {
   it('produces a header row followed by one row per transaction', () => {
     const csv = transactionsToCsv(transactions);
     const lines = csv.split('\n');
-    expect(lines[0]).toBe('Date,Amount,From,Status,Transaction Hash');
+    expect(lines[0]).toBe('Date,Amount,From,Message,Status,Transaction Hash');
     expect(lines).toHaveLength(4);
   });
 
@@ -153,6 +180,6 @@ describe('transactionsToCsv', () => {
 
   it('returns just the header row for an empty transaction list', () => {
     const csv = transactionsToCsv([]);
-    expect(csv).toBe('Date,Amount,From,Status,Transaction Hash');
+    expect(csv).toBe('Date,Amount,From,Message,Status,Transaction Hash');
   });
 });

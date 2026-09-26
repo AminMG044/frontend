@@ -6,6 +6,8 @@
 // Re-export SDK types for convenience
 export type { CreateTipRequest, TipRequest } from 'dorisio-sdk';
 
+export type CreatorVerificationStatus = 'pending' | 'verified' | 'rejected' | 'unverified';
+
 /**
  * Creator profile (extended from SDK)
  */
@@ -17,6 +19,10 @@ export interface Creator {
   bio?: string;
   avatar?: string;
   verified: boolean;
+  verificationStatus?: CreatorVerificationStatus;
+  verifiedAt?: string;
+  verificationType?: string;
+  verificationReason?: string;
   isPublic: boolean;
   totalEarnings: number;
   pendingBalance: number;
@@ -67,7 +73,7 @@ export interface PageState {
  * API route (`/api/creators/[username]/analytics`) under this app rather than
  * the SDK. See `src/app/api/creators/[username]/analytics/route.ts`.
  */
-export type AnalyticsDateRangePreset = '30d' | '90d' | 'ytd';
+export type AnalyticsDateRangePreset = '30d' | '90d' | 'ytd' | 'custom';
 
 /** A single day's earnings, for the earnings trend line chart. */
 export interface EarningsTrendPoint {

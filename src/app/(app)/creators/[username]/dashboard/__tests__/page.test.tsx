@@ -10,8 +10,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render as testingLibraryRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useCreatorBalance as sdkUseCreatorBalance,
   useTransactionHistory as sdkUseTransactionHistory,
@@ -21,9 +22,22 @@ import { useAuthStore } from '@/stores/auth-store';
 import CreatorDashboardPage from '../page';
 
 const replace = vi.fn();
+
+function render(ui: Parameters<typeof testingLibraryRender>[0]) {
+  return testingLibraryRender(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      {ui}
+    </QueryClientProvider>
+  );
+}
+
 vi.mock('next/navigation', () => ({
   useParams: () => ({ username: 'testcreator' }),
-  useRouter: () => ({ replace }),
+  useRouter: () => ({ replace, push: vi.fn() }),
+  // useTransactionFilter syncs filter state to URL search params.
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // useRealtimeNotifications (#11) needs a QueryClientProvider ancestor
@@ -34,28 +48,30 @@ vi.mock('@/hooks/use-realtime-notifications', () => ({
   useRealtimeNotifications: vi.fn(() => ({ notifications: [], isConnected: false, error: null })),
 }));
 
-function balanceResult(overrides: Partial<ReturnType<typeof sdkUseCreatorBalance>> = {}) {
+function balanceResult(
+  overrides: Partial<ReturnType<typeof sdkUseCreatorBalance>> = {}
+): ReturnType<typeof sdkUseCreatorBalance> {
   return {
-    balance: null,
+    balance: undefined,
     loading: false,
-    error: null,
+    error: undefined,
     fetchBalance: vi.fn(),
     refetch: vi.fn(),
     reset: vi.fn(),
     ...overrides,
-  };
+  } as unknown as ReturnType<typeof sdkUseCreatorBalance>;
 }
 
 function transactionHistoryResult(
   overrides: Partial<ReturnType<typeof sdkUseTransactionHistory>> = {}
-) {
+): ReturnType<typeof sdkUseTransactionHistory> {
   return {
     transactions: [],
     total: 0,
     page: 1,
     pageSize: 10,
     loading: false,
-    error: null,
+    error: undefined,
     fetchHistory: vi.fn(),
     goToPage: vi.fn(),
     nextPage: vi.fn(),
@@ -64,15 +80,18 @@ function transactionHistoryResult(
     refetch: vi.fn(),
     reset: vi.fn(),
     ...overrides,
-  };
+  } as unknown as ReturnType<typeof sdkUseTransactionHistory>;
 }
 
-function walletResult(overrides: Partial<ReturnType<typeof sdkUseWallet>> = {}) {
+function walletResult(
+  overrides: Partial<ReturnType<typeof sdkUseWallet>> = {}
+): ReturnType<typeof sdkUseWallet> {
   return {
     wallets: [],
-    selectedWallet: null,
+    selectedWallet: undefined,
     loading: false,
-    error: null,
+    error: undefined,
+    challengeStep: 'idle',
     generateNonce: vi.fn(),
     getChallenge: vi.fn(),
     verifyWallet: vi.fn(),
@@ -83,10 +102,13 @@ function walletResult(overrides: Partial<ReturnType<typeof sdkUseWallet>> = {}) 
     getBalance: vi.fn(),
     reset: vi.fn(),
     ...overrides,
-  };
+  } as unknown as ReturnType<typeof sdkUseWallet>;
 }
 
 vi.mock('dorisio-sdk/react', () => ({
+  useDorisio: vi.fn(() => ({
+    client: { isTransactionVerified: vi.fn() },
+  })),
   useCreatorBalance: vi.fn(() => ({
     balance: null,
     loading: false,
@@ -143,7 +165,7 @@ const REALISTIC_TRANSACTIONS = [
     status: 'pending' as const,
     createdAt: '2026-08-02T09:30:00.000Z',
   },
-];
+] as unknown as ReturnType<typeof sdkUseTransactionHistory>['transactions'];
 
 describe('CreatorDashboardPage data loading (#7)', () => {
   beforeEach(() => {
@@ -187,9 +209,7 @@ describe('CreatorDashboardPage data loading (#7)', () => {
 
   describe('loading states', () => {
     it('shows earnings card skeletons while the balance is loading', () => {
-      vi.mocked(sdkUseCreatorBalance).mockImplementation(() =>
-        balanceResult({ loading: true })
-      );
+      vi.mocked(sdkUseCreatorBalance).mockImplementation(() => balanceResult({ loading: true }));
 
       render(<CreatorDashboardPage />);
 
@@ -226,7 +246,7 @@ describe('CreatorDashboardPage data loading (#7)', () => {
     it('renders earnings figures once the balance loads', () => {
       vi.mocked(sdkUseCreatorBalance).mockImplementation(() =>
         balanceResult({
-          balance: { totalEarnings: 1000, pendingBalance: 200, availableBalance: 800 },
+          balance: { totalEarnings: 1000, pendingBalance: 200 },
         })
       );
 
@@ -246,8 +266,8 @@ describe('CreatorDashboardPage data loading (#7)', () => {
 
       expect(screen.getByText('fan_alice')).toBeInTheDocument();
       expect(screen.getByText('$25.00')).toBeInTheDocument();
-      expect(screen.getByText('Confirmed')).toBeInTheDocument();
-      expect(screen.getByText('Pending')).toBeInTheDocument();
+      expect(screen.getAllByText('Confirmed')).toHaveLength(2);
+      expect(screen.getAllByText('Pending')).toHaveLength(2);
       // Anonymous sender falls back to a truncated id, per the page's own logic
       expect(screen.getByText('anon-sen...')).toBeInTheDocument();
     });
@@ -256,7 +276,14 @@ describe('CreatorDashboardPage data loading (#7)', () => {
       vi.mocked(sdkUseWallet).mockImplementation(() =>
         walletResult({
           wallets: [
-            { id: 'w1', publicKey: 'GABC...XYZ', name: 'Main Wallet', verified: true },
+            {
+              id: 'w1',
+              userId: 'u1',
+              publicKey: 'GABC...XYZ',
+              name: 'Main Wallet',
+              verified: true,
+              createdAt: '2026-08-01T12:00:00.000Z',
+            },
           ],
         })
       );
@@ -264,6 +291,31 @@ describe('CreatorDashboardPage data loading (#7)', () => {
       render(<CreatorDashboardPage />);
 
       expect(screen.getByText('Main Wallet')).toBeInTheDocument();
+    });
+  });
+
+  describe('verification status', () => {
+    it('shows the creator verification state and details', () => {
+      useAuthStore.setState({
+        user: {
+          id: 'u1',
+          email: 'creator@example.com',
+          username: 'testcreator',
+          role: 'creator',
+          verified: true,
+          verificationStatus: 'verified',
+          verificationType: 'identity',
+        },
+        token: 'token',
+        isAuthenticated: true,
+        isLoading: false,
+      });
+
+      render(<CreatorDashboardPage />);
+
+      expect(screen.getByRole('status', { name: 'Verified status' })).toBeInTheDocument();
+      expect(screen.getByText('Type:')).toBeInTheDocument();
+      expect(screen.getByText('identity')).toBeInTheDocument();
     });
   });
 
@@ -358,8 +410,41 @@ describe('CreatorDashboardPage data loading (#7)', () => {
 
       render(<CreatorDashboardPage />);
 
-      await user.selectOptions(screen.getByRole('combobox'), '25');
-      expect(setPageSize).toHaveBeenCalledWith(25);
+      await user.selectOptions(screen.getByLabelText('Transactions per page'), '50');
+      expect(setPageSize).toHaveBeenCalledWith(50);
+    });
+  });
+
+  describe('transaction filtering and export (#25)', () => {
+    it('filters the rendered rows when a status filter is applied', async () => {
+      const user = userEvent.setup();
+      vi.mocked(sdkUseTransactionHistory).mockImplementation(() =>
+        transactionHistoryResult({ transactions: REALISTIC_TRANSACTIONS, total: 2 })
+      );
+
+      render(<CreatorDashboardPage />);
+
+      expect(screen.getByText('fan_alice')).toBeInTheDocument();
+
+      await user.selectOptions(screen.getByLabelText('Status'), 'pending');
+
+      // Only the pending transaction remains; the confirmed one is filtered out.
+      expect(screen.queryByText('fan_alice')).not.toBeInTheDocument();
+      expect(screen.getByText('$5.00')).toBeInTheDocument();
+      expect(screen.getByText(/Export CSV \(1\)/)).toBeInTheDocument();
+    });
+
+    it('shows a no-match message when filters exclude every transaction', async () => {
+      const user = userEvent.setup();
+      vi.mocked(sdkUseTransactionHistory).mockImplementation(() =>
+        transactionHistoryResult({ transactions: REALISTIC_TRANSACTIONS, total: 2 })
+      );
+
+      render(<CreatorDashboardPage />);
+
+      await user.type(screen.getByLabelText('Min amount'), '999');
+
+      expect(screen.getByText('No transactions match the current filters')).toBeInTheDocument();
     });
   });
 

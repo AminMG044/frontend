@@ -3,10 +3,8 @@
  * Wrapper around SDK's useCreateTip hook with frontend-specific types
  */
 
-import {
-  useCreateTip as sdkUseCreateTip,
-  type SDKTipResult,
-} from 'dorisio-sdk/react';
+import { useCreateTip as sdkUseCreateTip } from 'dorisio-sdk/react';
+import type { Transaction } from 'dorisio-sdk';
 
 export interface CreateTipPayload {
   creatorId: string;
@@ -36,7 +34,7 @@ export interface TipResponse {
 }
 
 function isTipStatus(value: string | null | undefined): value is TipStatus {
-  return typeof value === 'string' && (TIP_STATUSES as readonly string[]).includes(value);
+  return typeof value === 'string' && TIP_STATUSES.some((status) => status === value);
 }
 
 function toTipStatus(...values: Array<string | null | undefined>): TipStatus {
@@ -48,9 +46,9 @@ function toTipStatus(...values: Array<string | null | undefined>): TipStatus {
   return 'pending';
 }
 
-function toTransactionHash(result: SDKTipResult | null | undefined): string | undefined {
-  const hash = result?.transactionHash;
-  return typeof hash === 'string' ? hash : undefined;
+function toTransactionHash(result: Transaction | null | undefined): string | undefined {
+  const hash = result?.stellarTxHash;
+  return typeof hash === 'string' && hash.length > 0 ? hash : undefined;
 }
 
 export function useCreateTip() {

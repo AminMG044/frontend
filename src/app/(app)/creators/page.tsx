@@ -1,14 +1,15 @@
 /**
  * Creator Discovery Page
- * Browse and search creators
+ * Browse and search creators with infinite scroll
  */
 
 'use client';
 
 import { Suspense } from 'react';
-import { useCreatorSearch } from '@/hooks/use-creator-search';
-import { formatCurrency } from '@/utils/formatters';
+import { useCreatorInfiniteScroll } from '@/hooks/use-creator-infinite-scroll';
 import { CreatorSearchBar } from '@/components/sections/creator-search-bar';
+import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
+import { CreatorBio } from '@/components/sections/creator-bio';
 import DorisioButton from '@/components/sections/dorisio-button';
 import Link from 'next/link';
 
@@ -21,10 +22,17 @@ export default function CreatorDiscoveryPage() {
 }
 
 function CreatorDiscoveryPageContent() {
-  const { filters, setFilter, resetFilters, creators, total, pageSize, isLoading, error } =
-    useCreatorSearch();
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const {
+    filters,
+    setFilter,
+    resetFilters,
+    creators,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+    fetchNextPage,
+  } = useCreatorInfiniteScroll();
 
   return (
     <main className="min-h-screen bg-background">
@@ -41,23 +49,15 @@ function CreatorDiscoveryPageContent() {
         <CreatorSearchBar filters={filters} onChange={setFilter} onReset={resetFilters} />
 
         {/* Results Count */}
-        <p className="text-muted-foreground mb-6">
-          Found {creators.length} creator{creators.length !== 1 ? 's' : ''}
-        </p>
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading creators...</p>
-            </div>
-          </div>
+        {creators.length > 0 && (
+          <p className="text-muted-foreground mb-6">
+            Showing {creators.length} creator{creators.length !== 1 ? 's' : ''}
+          </p>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg">
+          <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg mb-6">
             <p className="font-medium">{error.message || 'Failed to load creators'}</p>
           </div>
         )}
@@ -92,19 +92,24 @@ function CreatorDiscoveryPageContent() {
 
                     {/* Name and Verification */}
                     <div className="mb-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-lg">{creator.displayName}</h3>
-                        {creator.verified && <span className="text-green-600">✓</span>}
+                      <div className="flex flex-wrap items-center gap-2 mb-1 min-w-0">
+                        <h3 className="font-bold text-lg min-w-0 break-words">
+                          {creator.displayName}
+                        </h3>
+                        <CreatorVerificationBadge
+                          verified={creator.verified}
+                          status={creator.verificationStatus}
+                          verifiedAt={creator.verifiedAt}
+                          verificationType={creator.verificationType}
+                          verificationReason={creator.verificationReason}
+                          compact
+                        />
                       </div>
                       <p className="text-sm text-muted-foreground">@{creator.username}</p>
                     </div>
 
                     {/* Bio */}
-                    {creator.bio && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {creator.bio}
-                      </p>
-                    )}
+                    {creator.bio && <CreatorBio value={creator.bio} className="mb-4 line-clamp-2 text-sm text-muted-foreground" />}
 
                     {/* Stats */}
                     <div className="bg-muted rounded-lg p-3 mb-4 text-sm">
