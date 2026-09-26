@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/modal';
 import { useCreateTip } from '@/hooks/use-create-tip';
 import { useWallet } from '@/hooks/use-wallet';
+import { WalletSelector } from '@/components/sections/wallet-selector';
 import { useNotification } from '@/components/notification-provider';
 import { dedupedRequest } from '@/lib/request-deduplicator';
 import { EmojiPicker } from '@/components/shared/emoji-picker';
