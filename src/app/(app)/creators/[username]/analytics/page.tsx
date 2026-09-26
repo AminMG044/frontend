@@ -1,7 +1,7 @@
 /**
  * Creator Analytics Page
  * Private analytics dashboard at /creators/[username]/analytics
- * Shows earnings trends, tip source breakdown, top tippers, and report exports.
+ * Shows earnings trends, tip source breakdown, top tippers, live metrics, and CSV export.
  */
 
 'use client';
@@ -12,9 +12,13 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCreatorAnalytics } from '@/hooks/use-creator-analytics';
+import { useLiveAnalytics } from '@/hooks/use-live-analytics';
+import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications';
 import { AnalyticsSummaryCards } from '@/components/sections/analytics-summary-cards';
 import { AnalyticsDateRangePicker } from '@/components/sections/analytics-date-range-picker';
 import { TopTippersTable } from '@/components/sections/top-tippers-table';
+import { LiveMetricsCards } from '@/components/sections/live-metrics-cards';
+import { LiveActivityFeed } from '@/components/sections/live-activity-feed';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { downloadAnalyticsCsv, downloadAnalyticsExcel, printAnalyticsPdf } from '@/lib/csv-export';
@@ -52,11 +56,9 @@ export default function CreatorAnalyticsPage(): JSX.Element {
   const [range, setRange] = useState<AnalyticsDateRangePreset>('30d');
   const [customRange, setCustomRange] = useState({ startDate: thirtyDaysAgo, endDate: today });
 
-  const { data, isLoading, isError, error } = useCreatorAnalytics(username, {
-    preset: range,
-    startDate: customRange.startDate,
-    endDate: customRange.endDate,
-  });
+  const { data, isLoading, isError, error } = useCreatorAnalytics(username, range);
+  const liveMetrics = useLiveAnalytics(username);
+  const { notifications, isConnected: isLiveConnected } = useRealtimeNotifications(username);
 
   // Mirrors the auth guard used by the sibling `/creators/[username]/dashboard`
   // page: only the creator viewing their own analytics can see this page.
@@ -103,7 +105,9 @@ export default function CreatorAnalyticsPage(): JSX.Element {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">Creator Analytics</h1>
-          <p className="text-muted-foreground">Earnings trends, tip sources, and top supporters</p>
+          <p className="text-muted-foreground">
+            Earnings trends, live metrics, tip sources, and top supporters
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <AnalyticsDateRangePicker
@@ -161,8 +165,17 @@ export default function CreatorAnalyticsPage(): JSX.Element {
 
       {data && (
         <>
+          {/* Live Metrics Section */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Live Performance Metrics</h2>
+            <LiveMetricsCards metrics={liveMetrics} />
+          </div>
+
           {/* Summary Cards */}
-          <AnalyticsSummaryCards summary={data.summary} />
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Period Summary</h2>
+            <AnalyticsSummaryCards summary={data.summary} />
+          </div>
 
           {/* Earnings Trend */}
           <Card className="p-6 space-y-4">
@@ -170,18 +183,21 @@ export default function CreatorAnalyticsPage(): JSX.Element {
             <EarningsTrendChart data={data.earningsTrend} />
           </Card>
 
-          {/* Source Breakdown + Top Tippers */}
+          {/* Source Breakdown + Activity Feed */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="p-6 space-y-4">
               <h2 className="text-xl font-bold">Tip Source Breakdown</h2>
               <TipSourceBreakdown data={data.sourceBreakdown} />
             </Card>
 
-            <Card className="p-6 space-y-4">
-              <h2 className="text-xl font-bold">Top Tippers</h2>
-              <TopTippersTable data={data.topTippers} />
-            </Card>
+            <LiveActivityFeed notifications={notifications} maxItems={8} />
           </div>
+
+          {/* Top Tippers */}
+          <Card className="p-6 space-y-4">
+            <h2 className="text-xl font-bold">Top Tippers</h2>
+            <TopTippersTable data={data.topTippers} />
+          </Card>
         </>
       )}
 

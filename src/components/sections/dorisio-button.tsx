@@ -16,14 +16,11 @@ import {
 } from '@/components/ui/modal';
 import { useCreateTip } from '@/hooks/use-create-tip';
 import { useWallet } from '@/hooks/use-wallet';
+import { WalletSelector } from '@/components/sections/wallet-selector';
 import { useNotification } from '@/components/notification-provider';
 import { dedupedRequest } from '@/lib/request-deduplicator';
-import {
-  appendEmoji,
-  normalizeTipMessage,
-  TIP_MESSAGE_MAX_LENGTH,
-  validateTipMessage,
-} from '@/lib/tip-message';
+import { EmojiPicker } from '@/components/shared/emoji-picker';
+import { useWallet } from '@/hooks/use-wallet';
 
 interface DorisioButtonProps {
   creatorId: string;
@@ -48,6 +45,11 @@ export default function DorisioButton({
   const { createTip, loading } = useCreateTip();
   const { success, error: notifyError } = useNotification();
   const { wallets, getPreferredWalletId, setLastUsedWallet } = useWallet();
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [message, setMessage] = useState('');
+  const { createTip, loading } = useCreateTip();
+  const { success: notifySuccess, error: notifyError } = useNotification();
 
   // Auto-select preferred wallet when modal opens
   useEffect(() => {
@@ -124,8 +126,8 @@ export default function DorisioButton({
       success(`Tip of $${selectedAmount} sent!`, 'Thank you');
       handleClose(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send tip';
-      notifyError(message, 'Tip failed');
+      const errMessage = err instanceof Error ? err.message : 'Failed to send tip';
+      notifyError(errMessage, 'Tip failed');
     }
   }
 
