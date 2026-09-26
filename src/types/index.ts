@@ -96,6 +96,7 @@ export interface TopTipper {
   totalAmount: number;
   tipCount: number;
   lastTipAt: string;
+  latestMessage?: string;
 }
 
 export interface CreatorAnalyticsSummary {
