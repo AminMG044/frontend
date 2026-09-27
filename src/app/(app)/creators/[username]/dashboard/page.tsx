@@ -24,6 +24,9 @@ import {
 } from '@/components/shared/creator-skeletons';
 import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
 import Link from 'next/link';
+import { SubscriptionManagement } from '@/components/sections/subscription-management';
+import { TipTierSettings } from '@/components/sections/tip-tier-settings';
+import { ScheduledTipsDashboard } from '@/components/sections/scheduled-tips-dashboard';
 import { fetchCreatorAnalytics } from '@/hooks/use-creator-analytics';
 
 export default function CreatorDashboardPage() {
@@ -124,6 +127,8 @@ function CreatorDashboardPageContent() {
       </div>
 
       <SubscriptionManagement creatorId={username} />
+      <TipTierSettings creatorId={username} />
+      <ScheduledTipsDashboard creatorId={username} />
 
       <section
         aria-labelledby="creator-verification-heading"

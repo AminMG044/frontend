@@ -59,6 +59,7 @@ export interface Creator {
   totalEarnings: number;
   pendingBalance: number;
   createdAt: string;
+  tipTiers?: number[];
   portfolio?: CreatorPortfolio;
   socialLinks?: SocialLinks;
 }
@@ -96,6 +97,34 @@ export interface Tip {
   transactionHash?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+/**
+ * Scheduled Tip Frequency
+ */
+export type ScheduledTipFrequency = 'once' | 'daily' | 'weekly' | 'monthly';
+
+/**
+ * Scheduled Tip Status
+ */
+export type ScheduledTipStatus = 'pending' | 'executed' | 'cancelled';
+
+/**
+ * Scheduled Tip
+ */
+export interface ScheduledTip {
+  id: string;
+  creatorId: string;
+  creatorName?: string;
+  amount: number;
+  walletId?: string;
+  message?: string;
+  scheduledDate: string;
+  frequency: ScheduledTipFrequency;
+  status: ScheduledTipStatus;
+  createdAt: string;
+  executedAt?: string;
+  cancelledAt?: string;
 }
 
 /**
