@@ -13,6 +13,7 @@ import { BackgroundRefreshIndicator } from '@/components/shared/background-refre
 import { RouteTracker } from '@/components/route-tracker';
 import { useAuthStore } from '@/stores/auth-store';
 import { setMonitoringUser } from '@/lib/monitoring';
+import { initPerformanceMonitoring } from '@/lib/performance';
 
 const CompatibleDorisioProvider = DorisioProvider as unknown as ComponentType<{
   client: DorisioClient;
@@ -55,6 +56,8 @@ export function Providers({ children }: { children: ReactNode }): JSX.Element {
   useEffect(() => {
     setMonitoringUser(user ? { id: user.id, email: user.email, username: user.username } : null);
   }, [user]);
+
+  useEffect(() => initPerformanceMonitoring(), []);
 
   if (!hasHydrated) {
     return (
