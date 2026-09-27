@@ -8,6 +8,7 @@
 import { Suspense } from 'react';
 import { useCreatorInfiniteScroll } from '@/hooks/use-creator-infinite-scroll';
 import { CreatorSearchBar } from '@/components/sections/creator-search-bar';
+import { CreatorFacetSidebar } from '@/components/sections/creator-facet-sidebar';
 import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
 import { CreatorBio } from '@/components/sections/creator-bio';
 import DorisioButton from '@/components/sections/dorisio-button';
@@ -47,6 +48,9 @@ function CreatorDiscoveryPageContent() {
       {/* Search and Filters */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <CreatorSearchBar filters={filters} onChange={setFilter} onReset={resetFilters} />
+        <div className="mb-8 flex flex-col gap-6 lg:flex-row">
+          <CreatorFacetSidebar filters={filters} categories={[...new Set(creators.map((creator) => creator.category).filter((category): category is string => Boolean(category)))]} resultCount={creators.length} onChange={setFilter} onReset={resetFilters} />
+          <div className="min-w-0 flex-1">
 
         {/* Results Count */}
         {creators.length > 0 && (
@@ -163,6 +167,8 @@ function CreatorDiscoveryPageContent() {
             </button>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </main>
   );
