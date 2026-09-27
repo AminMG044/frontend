@@ -24,7 +24,10 @@ import { CreatorVerificationBadge } from '@/components/shared/creator-verificati
 import { CreatorBio } from '@/components/sections/creator-bio';
 import { SubscriptionTiers } from '@/components/sections/subscription-tiers';
 import { SubscriberOnlyContent } from '@/components/sections/subscriber-only-content';
-import { CreatorPortfolio } from '@/components/sections/creator-portfolio';
+import { SupporterLeaderboard } from '@/components/sections/supporter-leaderboard';
+import { SupporterLoyaltyCard } from '@/components/sections/supporter-loyalty-card';
+import { useCreatorSupporters } from '@/hooks/use-creator-supporters';
+import { useCreatorBadgeThresholds } from '@/hooks/use-badge-thresholds';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface CreatorPageState {
@@ -47,6 +50,17 @@ export default function CreatorProfilePage(): JSX.Element {
 
   const balance = useCreatorBalance(state.creator?.id);
   const history = useTransactionHistory(state.creator?.id);
+  const { entries: topSupporters } = useCreatorSupporters(username);
+  const { thresholds } = useCreatorBadgeThresholds(state.creator?.id);
+
+  // The signed-in supporter's cumulative spend with this creator, derived from
+  // their confirmed tips in the loaded history. Best-effort: the SDK exposes no
+  // per-supporter total, so this covers the most recent page of tips.
+  const supporterSpend = user
+    ? history.transactions
+        .filter((tx) => tx.senderId === user.id && tx.status === 'confirmed')
+        .reduce((sum, tx) => sum + tx.amount, 0)
+    : 0;
 
   // Fetch creator profile
   useEffect(() => {
@@ -178,14 +192,21 @@ export default function CreatorProfilePage(): JSX.Element {
           </div>
         </SubscriberOnlyContent>
 
-        {/* Portfolio Section */}
-        <section className="mb-12">
-          <CreatorPortfolio
-            mediaItems={state.creator.portfolio?.mediaItems || []}
-            externalLinks={state.creator.portfolio?.externalLinks || []}
-            isOwner={user?.id === state.creator.userId}
+        {/* Supporter loyalty: earned badge, progress to next tier, opt-in */}
+        {user && (
+          <SupporterLoyaltyCard
+            creatorId={state.creator.id}
+            supporterId={user.id}
+            totalSpend={supporterSpend}
           />
-        </section>
+        )}
+
+        {/* Top supporter leaderboard */}
+        {topSupporters.length > 0 && (
+          <div className="mt-12">
+            <SupporterLeaderboard entries={topSupporters} thresholds={thresholds} />
+          </div>
+        )}
         {/* Earnings Overview */}
         {balance.balance && (
           <section className="mb-12">

@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+const captureErrorMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/monitoring', () => ({
+  captureError: captureErrorMock,
+}));
+
 import { ErrorBoundary } from './error-boundary';
 
 // ---------------------------------------------------------------------------
@@ -217,6 +224,25 @@ describe('ErrorBoundary', () => {
     );
 
     expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument();
+
+    spy.mockRestore();
+  });
+
+  // ── Error monitoring ──────────────────────────────────────────────────────
+
+  it('reports the caught error to monitoring with the component stack', () => {
+    const spy = suppressConsoleError();
+
+    render(
+      <ErrorBoundary>
+        <BombComponent message="Reported error" />
+      </ErrorBoundary>
+    );
+
+    expect(captureErrorMock).toHaveBeenCalledTimes(1);
+    const [error, context] = captureErrorMock.mock.calls[0] as [Error, { componentStack?: string }];
+    expect(error.message).toBe('Reported error');
+    expect(context.componentStack).toBeDefined();
 
     spy.mockRestore();
   });

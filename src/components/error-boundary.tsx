@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { captureError } from '@/lib/monitoring';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -51,8 +52,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error };
   }
 
-  /** Log error details in development for easier debugging. */
+  /**
+   * Report the error to monitoring (Sentry) and log it in development for
+   * easier debugging.
+   */
   componentDidCatch(error: Error, info: ErrorInfo): void {
+    captureError(error, { componentStack: info.componentStack });
+
     if (process.env.NODE_ENV !== 'production') {
       console.error('[ErrorBoundary] Caught an error:', error);
       console.error('[ErrorBoundary] Component stack:', info.componentStack);
