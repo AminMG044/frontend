@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useCallback, useMemo, type ComponentType } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, type ComponentType } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DorisioClient, type ClientConfig } from 'dorisio-sdk';
 import { DorisioProvider } from 'dorisio-sdk/react';
@@ -10,6 +10,9 @@ import { getQueryClient } from '@/lib/query-client';
 import { useAuthHydration } from '@/hooks/use-auth-hydration';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
 import { BackgroundRefreshIndicator } from '@/components/shared/background-refresh-indicator';
+import { RouteTracker } from '@/components/route-tracker';
+import { useAuthStore } from '@/stores/auth-store';
+import { setMonitoringUser } from '@/lib/monitoring';
 
 const CompatibleDorisioProvider = DorisioProvider as unknown as ComponentType<{
   client: DorisioClient;
@@ -46,6 +49,13 @@ export function Providers({ children }: { children: ReactNode }): JSX.Element {
   );
   const { hasHydrated } = useAuthHydration(syncToken);
 
+  // Keep Sentry's user context in sync with the signed-in user so error
+  // reports can be grouped by the affected account.
+  const user = useAuthStore((state) => state.user);
+  useEffect(() => {
+    setMonitoringUser(user ? { id: user.id, email: user.email, username: user.username } : null);
+  }, [user]);
+
   if (!hasHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -60,6 +70,7 @@ export function Providers({ children }: { children: ReactNode }): JSX.Element {
         <CompatibleDorisioProvider client={dorisioClient} config={dorisioClient.getConfig()}>
           <NotificationProvider />
           <BackgroundRefreshIndicator />
+          <RouteTracker />
           {children}
         </CompatibleDorisioProvider>
       </QueryClientProvider>

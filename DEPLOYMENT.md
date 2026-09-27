@@ -28,6 +28,12 @@ The following environment variables must be configured in Vercel:
 |----------|-------------|---------|
 | `NEXT_PUBLIC_ENABLE_ANALYTICS` | Enable analytics tracking | `false` |
 | `NEXT_PUBLIC_ENABLE_ERROR_REPORTING` | Enable error reporting | `false` |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN for browser error monitoring (unset disables reporting) | — |
+| `SENTRY_DSN` | Sentry DSN for server/edge error monitoring | — |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Environment label attached to Sentry events | `NODE_ENV` |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Share of transactions traced | `0.1` |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | Sentry org/project for source map upload | — |
+| `SENTRY_AUTH_TOKEN` | Build token for source map upload (CI only) | — |
 
 ## Deployment Steps
 
@@ -79,6 +85,26 @@ Monitor deployment health via:
 - **Performance**: Vercel Analytics tab
 - **Errors**: Vercel Logs tab
 - **Frontend Logs**: Browser DevTools Console
+
+### Frontend Error Monitoring
+
+Sentry is wired up through `sentry.client.config.ts`, `sentry.server.config.ts`,
+and `sentry.edge.config.ts`, and `next.config.js` is wrapped with
+`withSentryConfig`. Monitoring is a no-op when no DSN is set, so local and
+preview environments do not need any Sentry configuration.
+
+To enable it in production:
+
+1. Create a Sentry project and copy its **DSN**.
+2. Set `NEXT_PUBLIC_SENTRY_DSN` (browser) and `SENTRY_DSN` (server/edge).
+3. To upload source maps during the build, also set `SENTRY_ORG`,
+   `SENTRY_PROJECT`, and `SENTRY_AUTH_TOKEN`. Without `SENTRY_AUTH_TOKEN` the
+   upload step is skipped so builds still succeed.
+
+Uncaught exceptions, React errors caught by the app's `ErrorBoundary`, the
+signed-in user context, and navigation breadcrumbs are all reported
+automatically. Configure alert rules in the Sentry project for critical
+error volume.
 
 ### Common Issues
 
