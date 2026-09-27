@@ -24,6 +24,7 @@ import { CreatorVerificationBadge } from '@/components/shared/creator-verificati
 import { CreatorBio } from '@/components/sections/creator-bio';
 import { SubscriptionTiers } from '@/components/sections/subscription-tiers';
 import { SubscriberOnlyContent } from '@/components/sections/subscriber-only-content';
+import { CreatorPortfolio } from '@/components/sections/creator-portfolio';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface CreatorPageState {
@@ -176,6 +177,15 @@ export default function CreatorProfilePage(): JSX.Element {
             <p className="mt-1 text-sm text-muted-foreground">Thanks for supporting this creator.</p>
           </div>
         </SubscriberOnlyContent>
+
+        {/* Portfolio Section */}
+        <section className="mb-12">
+          <CreatorPortfolio
+            mediaItems={state.creator.portfolio?.mediaItems || []}
+            externalLinks={state.creator.portfolio?.externalLinks || []}
+            isOwner={user?.id === state.creator.userId}
+          />
+        </section>
         {/* Earnings Overview */}
         {balance.balance && (
           <section className="mb-12">

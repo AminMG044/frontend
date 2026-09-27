@@ -9,6 +9,37 @@ export type { CreateTipRequest, TipRequest } from 'dorisio-sdk';
 export type CreatorVerificationStatus = 'pending' | 'verified' | 'rejected' | 'unverified';
 
 /**
+ * Media item types for creator portfolio
+ */
+export type MediaType = 'image' | 'video' | 'link';
+
+export interface MediaItem {
+  id: string;
+  type: MediaType;
+  url: string;
+  thumbnail?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  order: number;
+  createdAt: string;
+}
+
+export interface ExternalLink {
+  id: string;
+  title: string;
+  url: string;
+  icon?: string;
+  order: number;
+}
+
+export interface CreatorPortfolio {
+  creatorId: string;
+  mediaItems: MediaItem[];
+  externalLinks: ExternalLink[];
+}
+
+/**
  * Creator profile (extended from SDK)
  */
 export interface Creator {
@@ -27,6 +58,7 @@ export interface Creator {
   totalEarnings: number;
   pendingBalance: number;
   createdAt: string;
+  portfolio?: CreatorPortfolio;
 }
 
 /**
@@ -114,4 +146,20 @@ export interface CreatorAnalytics {
   earningsTrend: EarningsTrendPoint[];
   sourceBreakdown: TipSourceBreakdownEntry[];
   topTippers: TopTipper[];
+}
+
+/**
+ * Notification types
+ */
+export type NotificationType = 'tip' | 'subscription' | 'milestone' | 'system';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, unknown>;
 }
