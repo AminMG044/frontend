@@ -59,6 +59,34 @@ export interface Tip {
 }
 
 /**
+ * Scheduled Tip Frequency
+ */
+export type ScheduledTipFrequency = 'once' | 'daily' | 'weekly' | 'monthly';
+
+/**
+ * Scheduled Tip Status
+ */
+export type ScheduledTipStatus = 'pending' | 'executed' | 'cancelled';
+
+/**
+ * Scheduled Tip
+ */
+export interface ScheduledTip {
+  id: string;
+  creatorId: string;
+  creatorName?: string;
+  amount: number;
+  walletId?: string;
+  message?: string;
+  scheduledDate: string;
+  frequency: ScheduledTipFrequency;
+  status: ScheduledTipStatus;
+  createdAt: string;
+  executedAt?: string;
+  cancelledAt?: string;
+}
+
+/**
  * Page loading and error states
  */
 export interface PageState {

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import DorisioButton from './dorisio-button';
 import { clearDedupedRequests } from '@/lib/request-deduplicator';
 import { useTipTierStore } from '@/stores/tip-tier-store';
+import { useScheduledTipsStore } from '@/stores/scheduled-tips-store';
 
 const createTipMock = vi.fn();
 let loadingState = false;
@@ -97,6 +98,9 @@ describe('DorisioButton (Send Tip flow)', () => {
       tiersByCreator: {},
       recentCustomAmounts: [],
       recentCustomAmountsByCreator: {},
+    });
+    useScheduledTipsStore.setState({
+      scheduledTips: [],
     });
     loadingState = false;
     createTipMock.mockReset();
@@ -345,4 +349,69 @@ describe('DorisioButton (Send Tip flow)', () => {
       expect(buttonTexts).toEqual(['$15', '$30', '$100']);
     });
   });
+
+  describe('Scheduled Tip flow', () => {
+    it('toggles scheduled tip section and shows delivery date picker and frequency options', async () => {
+      const user = userEvent.setup();
+      render(<DorisioButton creatorId="creator-1" creatorName="Alice" />);
+
+      await user.click(screen.getByRole('button', { name: /send a tip/i }));
+
+      // Schedule toggle button
+      const scheduleToggle = screen.getByRole('button', { name: /schedule tip ⏰/i });
+      expect(scheduleToggle).toBeInTheDocument();
+      expect(screen.queryByLabelText(/recurring frequency/i)).not.toBeInTheDocument();
+
+      // Click schedule toggle
+      await user.click(scheduleToggle);
+
+      expect(screen.getByText('Scheduled ✓')).toBeInTheDocument();
+      expect(screen.getByLabelText(/recurring frequency/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Schedule Tip' })).toBeInTheDocument();
+    });
+
+    it('schedules a recurring tip into store and notifies user', async () => {
+      const user = userEvent.setup();
+      render(<DorisioButton creatorId="creator-1" creatorName="Alice" />);
+
+      await user.click(screen.getByRole('button', { name: /send a tip/i }));
+
+      // Select preset amount $10
+      await user.click(screen.getByRole('button', { name: '$10' }));
+
+      // Enable scheduling
+      await user.click(screen.getByRole('button', { name: /schedule tip ⏰/i }));
+
+      // Select Weekly recurrence
+      const weeklyRadio = screen.getByRole('radio', { name: 'Weekly' });
+      await user.click(weeklyRadio);
+      expect(weeklyRadio).toHaveAttribute('aria-checked', 'true');
+
+      // Click submit
+      const scheduleSubmit = screen.getByRole('button', { name: 'Schedule Tip' });
+      expect(scheduleSubmit).not.toBeDisabled();
+      await user.click(scheduleSubmit);
+
+      // Verify createTip (immediate execution) was NOT called
+      expect(createTipMock).not.toHaveBeenCalled();
+
+      // Verify tip is stored in scheduledTipsStore
+      const scheduledTips = useScheduledTipsStore.getState().scheduledTips;
+      expect(scheduledTips).toHaveLength(1);
+      expect(scheduledTips[0]).toMatchObject({
+        creatorId: 'creator-1',
+        creatorName: 'Alice',
+        amount: 10,
+        frequency: 'weekly',
+        status: 'pending',
+      });
+
+      // Verify notification
+      expect(successMock).toHaveBeenCalledWith(
+        expect.stringContaining('Tip of $10 scheduled'),
+        'Tip Scheduled'
+      );
+    });
+  });
 });
+

@@ -11,3 +11,4 @@ export { useAuthHydration, type UseAuthHydrationResult } from './use-auth-hydrat
 export { useCreatorAnalytics } from './use-creator-analytics';
 export { useDebounce } from './use-debounce';
 export { useTipTiers, type UseTipTiersResult } from './use-tip-tiers';
+export { useScheduledTips, type UseScheduledTipsResult } from './use-scheduled-tips';

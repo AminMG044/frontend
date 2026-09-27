@@ -1,6 +1,7 @@
 /**
  * Dorisio Button Component
- * Opens tip modal dialog with preset tiers, custom amounts, and wallet selection
+ * Opens tip modal dialog with preset tiers, custom amounts, wallet selection,
+ * and future/recurring tip scheduling
  */
 
 'use client';
@@ -20,6 +21,9 @@ import { useNotification } from '@/components/notification-provider';
 import { dedupedRequest } from '@/lib/request-deduplicator';
 import { WalletSelector } from '@/components/sections/wallet-selector';
 import { useTipTiers } from '@/hooks/use-tip-tiers';
+import { useScheduledTips } from '@/hooks/use-scheduled-tips';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { ScheduledTipFrequency } from '@/types';
 import {
   appendEmoji,
   normalizeTipMessage,
@@ -29,6 +33,7 @@ import {
 
 interface DorisioButtonProps {
   creatorId: string;
+  creatorName?: string;
   variant?: 'default' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -39,6 +44,7 @@ const QUICK_EMOJIS = ['👏', '🔥', '💛', '🙌', '✨', '🚀'];
 
 export default function DorisioButton({
   creatorId,
+  creatorName,
   variant = 'default',
   size = 'md',
   className = '',
@@ -53,7 +59,14 @@ export default function DorisioButton({
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState<string | null>(null);
 
+  // Scheduling states
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
+  const [scheduledDateError, setScheduledDateError] = useState<string | null>(null);
+  const [frequency, setFrequency] = useState<ScheduledTipFrequency>('once');
+
   const { createTip, loading } = useCreateTip();
+  const { scheduleTip } = useScheduledTips(creatorId);
   const { success, error: notifyError } = useNotification();
   const { wallets, getPreferredWalletId, setLastUsedWallet } = useWallet();
   const {
@@ -113,6 +126,10 @@ export default function DorisioButton({
       setCustomAmountError(null);
       setMessage('');
       setMessageError(null);
+      setIsScheduled(false);
+      setScheduledDate(null);
+      setScheduledDateError(null);
+      setFrequency('once');
     }
   }
 
@@ -151,6 +168,17 @@ export default function DorisioButton({
   async function handleSendTip(): Promise<void> {
     if (!selectedAmount || !selectedWalletId || loading || Boolean(customAmountError)) return;
 
+    if (isScheduled) {
+      if (!scheduledDate) {
+        setScheduledDateError('Please select a date and time');
+        return;
+      }
+      if (scheduledDate.getTime() <= Date.now()) {
+        setScheduledDateError('Scheduled date must be in the future');
+        return;
+      }
+    }
+
     const normalizedMsg = normalizeTipMessage(message);
     const validationError = validateTipMessage(normalizedMsg);
     if (validationError) {
@@ -158,6 +186,32 @@ export default function DorisioButton({
       return;
     }
 
+    // Scheduled tip path
+    if (isScheduled && scheduledDate) {
+      scheduleTip({
+        creatorId,
+        creatorName,
+        amount: selectedAmount,
+        scheduledDate,
+        frequency,
+        walletId: selectedWalletId,
+        message: normalizedMsg || undefined,
+      });
+
+      if (isCustom && selectedAmount > 0) {
+        addRecentCustomAmount(selectedAmount);
+      }
+      setLastUsedWallet(creatorId, selectedWalletId);
+      const freqLabel = frequency === 'once' ? '' : ` (${frequency})`;
+      success(
+        `Tip of $${selectedAmount} scheduled for ${scheduledDate.toLocaleDateString()}${freqLabel}!`,
+        'Tip Scheduled'
+      );
+      handleClose(false);
+      return;
+    }
+
+    // Immediate tip path
     const dedupeKey = `create-tip:${creatorId}:${selectedAmount}:${selectedWalletId}:${normalizedMsg}`;
 
     try {
@@ -314,6 +368,101 @@ export default function DorisioButton({
               )}
             </div>
 
+            {/* Scheduled Tips Section */}
+            <div className="pt-2 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium">Schedule for future delivery</span>
+                  <p className="text-xs text-muted-foreground">
+                    Plan tips for birthdays, special dates, or recurring support
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isScheduled;
+                    setIsScheduled(next);
+                    if (next && !scheduledDate) {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      setScheduledDate(tomorrow);
+                      setScheduledDateError(null);
+                    }
+                  }}
+                  aria-pressed={isScheduled}
+                  className={`px-3 py-1 text-xs font-semibold rounded border transition ${
+                    isScheduled
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'hover:bg-muted text-foreground'
+                  }`}
+                >
+                  {isScheduled ? 'Scheduled ✓' : 'Schedule Tip ⏰'}
+                </button>
+              </div>
+
+              {isScheduled && (
+                <div className="p-3 bg-muted/30 border rounded-lg space-y-3 animate-fade-in">
+                  <div className="space-y-1.5">
+                    <label htmlFor="scheduled-date-picker" className="text-xs font-medium">
+                      Select Delivery Date & Time:
+                    </label>
+                    <DateTimePicker
+                      id="scheduled-date-picker"
+                      selected={scheduledDate}
+                      onChange={(date: Date | null) => {
+                        setScheduledDate(date);
+                        if (date && date.getTime() > Date.now()) {
+                          setScheduledDateError(null);
+                        } else if (date) {
+                          setScheduledDateError('Scheduled date must be in the future');
+                        }
+                      }}
+                      disabled={loading}
+                      minDate={new Date()}
+                    />
+                    {scheduledDateError && (
+                      <p role="alert" className="text-xs text-destructive">
+                        {scheduledDateError}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">Repeat frequency:</label>
+                    <div
+                      className="grid grid-cols-4 gap-1.5"
+                      role="radiogroup"
+                      aria-label="Recurring frequency"
+                    >
+                      {(
+                        [
+                          { value: 'once', label: 'One-time' },
+                          { value: 'daily', label: 'Daily' },
+                          { value: 'weekly', label: 'Weekly' },
+                          { value: 'monthly', label: 'Monthly' },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFrequency(opt.value)}
+                          aria-checked={frequency === opt.value}
+                          role="radio"
+                          className={`py-1.5 px-2 text-xs font-medium rounded border transition text-center ${
+                            frequency === opt.value
+                              ? 'bg-primary text-primary-foreground border-primary font-semibold'
+                              : 'bg-background hover:bg-muted text-foreground'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Message input */}
             <div className="space-y-3 mt-5">
               <div className="flex items-center justify-between gap-3">
@@ -391,11 +540,12 @@ export default function DorisioButton({
                 !selectedWalletId ||
                 loading ||
                 Boolean(messageError) ||
-                Boolean(customAmountError)
+                Boolean(customAmountError) ||
+                (isScheduled && (!scheduledDate || Boolean(scheduledDateError)))
               }
               className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Sending...' : 'Continue'}
+              {loading ? 'Sending...' : isScheduled ? 'Schedule Tip' : 'Continue'}
             </button>
           </ModalFooter>
         </ModalContent>
