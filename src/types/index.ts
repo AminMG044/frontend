@@ -60,6 +60,14 @@ export interface Creator {
   pendingBalance: number;
   createdAt: string;
   portfolio?: CreatorPortfolio;
+  socialLinks?: SocialLinks;
+}
+
+export interface SocialLinks {
+  twitter?: string;
+  youtube?: string;
+  instagram?: string;
+  tiktok?: string;
 }
 
 /**
