@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial project setup and scaffolding
+- Supporter loyalty system: bronze/silver/gold/platinum badges based on cumulative support, per-creator configurable thresholds, badge progress indicator, top-supporter leaderboard, and supporter opt-in/opt-out for a public badge profile (#42)
+- Error monitoring with Sentry: client/server/edge initialization, React error-boundary reporting, signed-in user context, navigation breadcrumbs, and optional source map upload (#45)
 
 ### Changed
 

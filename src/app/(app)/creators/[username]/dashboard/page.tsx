@@ -7,6 +7,7 @@
 'use client';
 
 import { Suspense, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCreatorBalance } from '@/hooks/use-creator-balance';
@@ -26,6 +27,7 @@ import Link from 'next/link';
 import { SubscriptionManagement } from '@/components/sections/subscription-management';
 import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { ScheduledTipsDashboard } from '@/components/sections/scheduled-tips-dashboard';
+import { fetchCreatorAnalytics } from '@/hooks/use-creator-analytics';
 
 export default function CreatorDashboardPage() {
   return (
@@ -40,6 +42,17 @@ function CreatorDashboardPageContent() {
   const router = useRouter();
   const username = params.username as string;
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+
+  // Warm the analytics tab while the dashboard is visible. React Query
+  // deduplicates this with the analytics page if navigation happens during
+  // the request, and the five-minute analytics policy keeps it fresh.
+  useEffect(() => {
+    void queryClient.prefetchQuery({
+      queryKey: ['creatorAnalytics', username, '30d', undefined, undefined],
+      queryFn: () => fetchCreatorAnalytics(username, { preset: '30d' }),
+    });
+  }, [queryClient, username]);
 
   const { balance, loading: balanceLoading, error: balanceError } = useCreatorBalance(username);
   const {
@@ -52,8 +65,15 @@ function CreatorDashboardPageContent() {
     loading: transactionsLoading,
     error: transactionsError,
   } = useTransactionHistory(username, 1, 20);
-  const { filters, setFilter, resetFilters, filteredTransactions, exportToCsv } =
-    useTransactionFilter(transactions);
+  const {
+    filters,
+    setFilter,
+    resetFilters,
+    filteredTransactions,
+    exportToCsv,
+    exportToExcel,
+    exportToPdf,
+  } = useTransactionFilter(transactions);
   const {
     wallets,
     loading: walletLoading,
@@ -110,7 +130,10 @@ function CreatorDashboardPageContent() {
       <TipTierSettings creatorId={username} />
       <ScheduledTipsDashboard creatorId={username} />
 
-      <section aria-labelledby="creator-verification-heading" className="border rounded-lg p-4 sm:p-6">
+      <section
+        aria-labelledby="creator-verification-heading"
+        className="border rounded-lg p-4 sm:p-6"
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 id="creator-verification-heading" className="font-semibold">
@@ -194,6 +217,8 @@ function CreatorDashboardPageContent() {
           onChange={setFilter}
           onReset={resetFilters}
           onExport={() => exportToCsv(`${username}-transactions`)}
+          onExportExcel={() => exportToExcel(`${username}-transactions`)}
+          onExportPdf={() => exportToPdf(`${username} Transaction History`)}
           resultCount={filteredTransactions.length}
         />
 

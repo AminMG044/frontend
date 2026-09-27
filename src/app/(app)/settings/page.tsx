@@ -15,6 +15,7 @@ import { useWallet } from '@/hooks/use-wallet';
 import { CreatorBioEditor } from '@/components/sections/creator-bio';
 import { SubscriptionSettings } from '@/components/sections/subscription-settings';
 import { TipTierSettings } from '@/components/sections/tip-tier-settings';
+import { BadgeThresholdSettings } from '@/components/sections/badge-threshold-settings';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface Settings {
@@ -179,6 +180,8 @@ export default function SettingsPage(): JSX.Element {
 
         {user?.username && <SubscriptionSettings creatorId={user.username} />}
         {user?.username && <TipTierSettings creatorId={user.username} />}
+
+        {user?.username && <BadgeThresholdSettings creatorId={user.username} />}
 
         {/* Default Wallet Settings */}
         <Card className="p-6 mb-6">

@@ -9,6 +9,37 @@ export type { CreateTipRequest, TipRequest } from 'dorisio-sdk';
 export type CreatorVerificationStatus = 'pending' | 'verified' | 'rejected' | 'unverified';
 
 /**
+ * Media item types for creator portfolio
+ */
+export type MediaType = 'image' | 'video' | 'link';
+
+export interface MediaItem {
+  id: string;
+  type: MediaType;
+  url: string;
+  thumbnail?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  order: number;
+  createdAt: string;
+}
+
+export interface ExternalLink {
+  id: string;
+  title: string;
+  url: string;
+  icon?: string;
+  order: number;
+}
+
+export interface CreatorPortfolio {
+  creatorId: string;
+  mediaItems: MediaItem[];
+  externalLinks: ExternalLink[];
+}
+
+/**
  * Creator profile (extended from SDK)
  */
 export interface Creator {
@@ -17,6 +48,7 @@ export interface Creator {
   username: string;
   displayName: string;
   bio?: string;
+  category?: string;
   avatar?: string;
   verified: boolean;
   verificationStatus?: CreatorVerificationStatus;
@@ -28,6 +60,15 @@ export interface Creator {
   pendingBalance: number;
   createdAt: string;
   tipTiers?: number[];
+  portfolio?: CreatorPortfolio;
+  socialLinks?: SocialLinks;
+}
+
+export interface SocialLinks {
+  twitter?: string;
+  youtube?: string;
+  instagram?: string;
+  tiktok?: string;
 }
 
 /**
@@ -125,6 +166,7 @@ export interface TopTipper {
   totalAmount: number;
   tipCount: number;
   lastTipAt: string;
+  latestMessage?: string;
 }
 
 export interface CreatorAnalyticsSummary {
@@ -142,4 +184,20 @@ export interface CreatorAnalytics {
   earningsTrend: EarningsTrendPoint[];
   sourceBreakdown: TipSourceBreakdownEntry[];
   topTippers: TopTipper[];
+}
+
+/**
+ * Notification types
+ */
+export type NotificationType = 'tip' | 'subscription' | 'milestone' | 'system';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, unknown>;
 }

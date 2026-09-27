@@ -21,3 +21,5 @@ export {
   CreatorVerificationBadge,
   type CreatorVerificationBadgeProps,
 } from './creator-verification-badge';
+
+export { SupporterBadge, type SupporterBadgeProps } from './supporter-badge';
