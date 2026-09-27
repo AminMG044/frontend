@@ -48,6 +48,7 @@ export interface Creator {
   username: string;
   displayName: string;
   bio?: string;
+  category?: string;
   avatar?: string;
   verified: boolean;
   verificationStatus?: CreatorVerificationStatus;
