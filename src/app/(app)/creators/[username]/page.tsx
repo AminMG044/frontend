@@ -161,7 +161,7 @@ export default function CreatorProfilePage(): JSX.Element {
               </div>
 
               {/* Tip Button */}
-              <DorisioButton creatorId={state.creator.id} />
+              <DorisioButton creatorId={state.creator.id} tipTiers={state.creator.tipTiers} />
               <SubscriptionTiers creatorId={state.creator.id} subscriberId={user?.id} />
             </div>
           </div>

@@ -1,6 +1,6 @@
 /**
  * Dorisio Button Component
- * Opens tip modal dialog
+ * Opens tip modal dialog with preset tiers, custom amounts, and wallet selection
  */
 
 'use client';
@@ -18,6 +18,8 @@ import { useCreateTip } from '@/hooks/use-create-tip';
 import { useWallet } from '@/hooks/use-wallet';
 import { useNotification } from '@/components/notification-provider';
 import { dedupedRequest } from '@/lib/request-deduplicator';
+import { WalletSelector } from '@/components/sections/wallet-selector';
+import { useTipTiers } from '@/hooks/use-tip-tiers';
 import {
   appendEmoji,
   normalizeTipMessage,
@@ -30,9 +32,9 @@ interface DorisioButtonProps {
   variant?: 'default' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  tipTiers?: number[];
 }
 
-const TIP_AMOUNTS = [1, 5, 10, 25];
 const QUICK_EMOJIS = ['👏', '🔥', '💛', '🙌', '✨', '🚀'];
 
 export default function DorisioButton({
@@ -40,14 +42,25 @@ export default function DorisioButton({
   variant = 'default',
   size = 'md',
   className = '',
+  tipTiers: propTipTiers,
 }: DorisioButtonProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
+  const [isCustom, setIsCustom] = useState(false);
+  const [customAmountInput, setCustomAmountInput] = useState('');
+  const [customAmountError, setCustomAmountError] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState<string | null>(null);
+
   const { createTip, loading } = useCreateTip();
   const { success, error: notifyError } = useNotification();
   const { wallets, getPreferredWalletId, setLastUsedWallet } = useWallet();
+  const {
+    tiers: activeTiers,
+    recentCustomAmounts,
+    addRecentCustomAmount,
+  } = useTipTiers(creatorId, propTipTiers);
 
   // Auto-select preferred wallet when modal opens
   useEffect(() => {
@@ -94,22 +107,58 @@ export default function DorisioButton({
     setIsOpen(open);
     if (!open) {
       setSelectedAmount(null);
+      setSelectedWalletId(null);
+      setIsCustom(false);
+      setCustomAmountInput('');
+      setCustomAmountError(null);
       setMessage('');
       setMessageError(null);
     }
   }
 
-  async function handleSendTip(): Promise<void> {
-    if (!selectedAmount || !selectedWalletId || loading) return;
+  function handleSelectPreset(amount: number): void {
+    setSelectedAmount(amount);
+    setIsCustom(false);
+    setCustomAmountInput('');
+    setCustomAmountError(null);
+  }
 
-    const normalizedMessage = normalizeTipMessage(message);
-    const validationError = validateTipMessage(normalizedMessage);
+  function handleCustomAmountChange(value: string): void {
+    setCustomAmountInput(value);
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setSelectedAmount(null);
+      setCustomAmountError(null);
+      return;
+    }
+    const parsed = parseFloat(trimmed);
+    if (isNaN(parsed) || parsed <= 0) {
+      setSelectedAmount(null);
+      setCustomAmountError('Please enter an amount greater than $0');
+    } else {
+      setSelectedAmount(parsed);
+      setCustomAmountError(null);
+    }
+  }
+
+  function handleSelectRecent(amount: number): void {
+    setIsCustom(true);
+    setCustomAmountInput(amount.toString());
+    setSelectedAmount(amount);
+    setCustomAmountError(null);
+  }
+
+  async function handleSendTip(): Promise<void> {
+    if (!selectedAmount || !selectedWalletId || loading || Boolean(customAmountError)) return;
+
+    const normalizedMsg = normalizeTipMessage(message);
+    const validationError = validateTipMessage(normalizedMsg);
     if (validationError) {
       setMessageError(validationError);
       return;
     }
 
-    const dedupeKey = `create-tip:${creatorId}:${selectedAmount}:${normalizedMessage}`;
+    const dedupeKey = `create-tip:${creatorId}:${selectedAmount}:${selectedWalletId}:${normalizedMsg}`;
 
     try {
       await dedupedRequest(
@@ -117,15 +166,19 @@ export default function DorisioButton({
           createTip({
             creatorId,
             amount: selectedAmount,
-            message: normalizedMessage || undefined,
+            message: normalizedMsg || undefined,
           }),
         dedupeKey
       );
+      if (isCustom && selectedAmount > 0) {
+        addRecentCustomAmount(selectedAmount);
+      }
+      setLastUsedWallet(creatorId, selectedWalletId);
       success(`Tip of $${selectedAmount} sent!`, 'Thank you');
       handleClose(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send tip';
-      notifyError(message, 'Tip failed');
+      const errMsg = err instanceof Error ? err.message : 'Failed to send tip';
+      notifyError(errMsg, 'Tip failed');
     }
   }
 
@@ -158,17 +211,23 @@ export default function DorisioButton({
             </div>
 
             {/* Amount Selection */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="text-sm font-medium">Select amount:</label>
-              <div className="grid grid-cols-4 gap-2">
-                {TIP_AMOUNTS.map((amount) => (
+
+              {/* Preset buttons + Custom toggle in responsive mobile-friendly grid */}
+              <div
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"
+                aria-label="Preset tip amounts"
+              >
+                {activeTiers.map((amount) => (
                   <button
                     key={amount}
-                    onClick={() => setSelectedAmount(amount)}
+                    type="button"
+                    onClick={() => handleSelectPreset(amount)}
                     disabled={loading}
-                    aria-pressed={selectedAmount === amount}
+                    aria-pressed={!isCustom && selectedAmount === amount}
                     className={`py-2 px-3 border rounded font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                      selectedAmount === amount
+                      !isCustom && selectedAmount === amount
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'hover:bg-muted'
                     }`}
@@ -176,8 +235,86 @@ export default function DorisioButton({
                     ${amount}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustom(true);
+                    if (
+                      customAmountInput &&
+                      !isNaN(Number(customAmountInput)) &&
+                      Number(customAmountInput) > 0
+                    ) {
+                      setSelectedAmount(Number(customAmountInput));
+                    } else {
+                      setSelectedAmount(null);
+                    }
+                  }}
+                  disabled={loading}
+                  aria-pressed={isCustom}
+                  className={`py-2 px-3 border rounded font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isCustom
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'hover:bg-muted'
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
+
+              {/* Custom amount input field */}
+              {isCustom && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="any"
+                      placeholder="Enter custom amount"
+                      value={customAmountInput}
+                      onChange={(e) => handleCustomAmountChange(e.target.value)}
+                      disabled={loading}
+                      aria-label="Custom tip amount"
+                      className="w-full pl-7 pr-3 py-2 border rounded-md text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                  {customAmountError && (
+                    <p role="alert" className="text-xs text-destructive">
+                      {customAmountError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Recent custom amounts for quick access (up to 3) */}
+              {recentCustomAmounts.length > 0 && (
+                <div className="space-y-1.5 pt-1" aria-label="Recent custom tips">
+                  <span className="text-xs text-muted-foreground">Recent custom amounts:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {recentCustomAmounts.map((recent) => (
+                      <button
+                        key={`recent-${recent}`}
+                        type="button"
+                        onClick={() => handleSelectRecent(recent)}
+                        disabled={loading}
+                        className={`px-2.5 py-1 text-xs border rounded-full transition hover:bg-muted ${
+                          isCustom && selectedAmount === recent
+                            ? 'border-primary bg-primary/10 text-primary font-medium'
+                            : 'text-muted-foreground'
+                        }`}
+                        aria-label={`Recent tip $${recent}`}
+                      >
+                        ${recent}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Message input */}
             <div className="space-y-3 mt-5">
               <div className="flex items-center justify-between gap-3">
                 <label htmlFor="tip-message" className="text-sm font-medium">
@@ -219,6 +356,8 @@ export default function DorisioButton({
               </div>
               {messageError && <p className="text-xs text-red-600">{messageError}</p>}
             </div>
+
+            {/* Share link */}
             <div className="mt-5 rounded-md border p-3">
               <p className="text-sm font-medium">Share your support</p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -236,6 +375,7 @@ export default function DorisioButton({
               </div>
             </div>
           </div>
+
           <ModalFooter>
             <button
               onClick={() => handleClose(false)}
@@ -246,7 +386,13 @@ export default function DorisioButton({
             </button>
             <button
               onClick={handleSendTip}
-              disabled={!selectedAmount || loading || Boolean(messageError)}
+              disabled={
+                !selectedAmount ||
+                !selectedWalletId ||
+                loading ||
+                Boolean(messageError) ||
+                Boolean(customAmountError)
+              }
               className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Sending...' : 'Continue'}

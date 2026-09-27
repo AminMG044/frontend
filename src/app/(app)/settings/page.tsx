@@ -14,6 +14,7 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 import { CreatorBioEditor } from '@/components/sections/creator-bio';
 import { SubscriptionSettings } from '@/components/sections/subscription-settings';
+import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface Settings {
@@ -177,6 +178,7 @@ export default function SettingsPage(): JSX.Element {
         </Card>
 
         {user?.username && <SubscriptionSettings creatorId={user.username} />}
+        {user?.username && <TipTierSettings creatorId={user.username} />}
 
         {/* Default Wallet Settings */}
         <Card className="p-6 mb-6">

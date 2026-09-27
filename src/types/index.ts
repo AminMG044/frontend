@@ -27,6 +27,7 @@ export interface Creator {
   totalEarnings: number;
   pendingBalance: number;
   createdAt: string;
+  tipTiers?: number[];
 }
 
 /**

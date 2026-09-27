@@ -24,6 +24,7 @@ import {
 import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
 import Link from 'next/link';
 import { SubscriptionManagement } from '@/components/sections/subscription-management';
+import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 
 export default function CreatorDashboardPage() {
   return (
@@ -105,6 +106,7 @@ function CreatorDashboardPageContent() {
       </div>
 
       <SubscriptionManagement creatorId={username} />
+      <TipTierSettings creatorId={username} />
 
       <section aria-labelledby="creator-verification-heading" className="border rounded-lg p-4 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
