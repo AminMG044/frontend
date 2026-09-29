@@ -18,6 +18,8 @@ Local development uses `.env.example` as the source of truth for required public
 
 Shared API access should go through the existing SDK client helpers in `src/lib/sdk-client.ts` and domain hooks in `src/hooks`. Components should not call `fetch` directly unless they are calling a frontend-owned Next.js route.
 
+For a comprehensive guide on initialization patterns, configuration tuning, error hierarchy, authentication lifecycles, pagination, and performance optimization, consult the [SDK Usage Patterns & Best Practices Guide](./SDK_USAGE_PATTERNS.md).
+
 Frontend-owned routes live under `src/app/api`. They are used when the backend SDK does not expose the exact read model needed by a page. For example, creator analytics are served by:
 
 ```txt

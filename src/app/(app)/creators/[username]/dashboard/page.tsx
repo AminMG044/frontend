@@ -29,6 +29,7 @@ import { SubscriptionManagement } from '@/components/sections/subscription-manag
 import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { ScheduledTipsDashboard } from '@/components/sections/scheduled-tips-dashboard';
 import { CreatorCollaborations } from '@/components/sections/creator-collaborations';
+import { ExclusiveContentCreatorPanel } from '@/components/sections/exclusive-content-creator-panel';
 import { fetchCreatorAnalytics } from '@/hooks/use-creator-analytics';
 
 export default function CreatorDashboardPage() {
@@ -134,6 +135,7 @@ function CreatorDashboardPageContent() {
       <TipTierSettings creatorId={username} />
       <ScheduledTipsDashboard creatorId={username} />
       <CreatorCollaborations username={username} userId={user.id} userName={user.name} />
+      <ExclusiveContentCreatorPanel creatorId={username} />
 
       <section
         aria-labelledby="creator-verification-heading"
