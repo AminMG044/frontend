@@ -18,6 +18,7 @@ import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { BadgeThresholdSettings } from '@/components/sections/badge-threshold-settings';
 import { PushNotificationToggle } from '@/components/shared/push-notification-toggle';
 import { useAuthStore } from '@/stores/auth-store';
+import { LanguageSelector } from '@/lib/i18n';
 
 interface Settings {
   displayName: string;
@@ -97,6 +98,11 @@ export default function SettingsPage(): JSX.Element {
           <h1 className="text-4xl font-bold mb-2">Settings</h1>
           <p className="text-muted-foreground">Manage your account and preferences</p>
         </div>
+
+        <Card className="p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Language</h2>
+          <LanguageSelector />
+        </Card>
 
         {/* Status Messages */}
         {status.type && (

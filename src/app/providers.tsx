@@ -13,6 +13,7 @@ import { BackgroundRefreshIndicator } from '@/components/shared/background-refre
 import { RouteTracker } from '@/components/route-tracker';
 import { useAuthStore } from '@/stores/auth-store';
 import { setMonitoringUser } from '@/lib/monitoring';
+import { I18nProvider } from '@/lib/i18n';
 import { registerServiceWorker } from '@/lib/push-notifications';
 
 const CompatibleDorisioProvider = DorisioProvider as unknown as ComponentType<{
@@ -76,6 +77,7 @@ export function Providers({ children }: { children: ReactNode }): JSX.Element {
   }
 
   return (
+    <I18nProvider>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <QueryClientProvider client={queryClient}>
         <CompatibleDorisioProvider client={dorisioClient} config={dorisioClient.getConfig()}>
@@ -86,5 +88,6 @@ export function Providers({ children }: { children: ReactNode }): JSX.Element {
         </CompatibleDorisioProvider>
       </QueryClientProvider>
     </ThemeProvider>
+    </I18nProvider>
   );
 }
