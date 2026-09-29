@@ -39,6 +39,15 @@ export interface CreatorPortfolio {
   externalLinks: ExternalLink[];
 }
 
+export interface CreatorLiveStream {
+  platform: 'twitch' | 'youtube';
+  channelUrl: string;
+  isLive: boolean;
+  viewerCount?: number;
+  videoId?: string;
+  replayUrl?: string;
+}
+
 /**
  * Creator profile (extended from SDK)
  */
@@ -62,6 +71,7 @@ export interface Creator {
   tipTiers?: number[];
   portfolio?: CreatorPortfolio;
   socialLinks?: SocialLinks;
+  liveStream?: CreatorLiveStream;
 }
 
 export interface SocialLinks {
