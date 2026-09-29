@@ -6,8 +6,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { updateSDKToken } from '@/lib/sdk-client';
-import { unsubscribeFromPush } from '@/lib/push-notifications';
-import { usePushNotificationPreferenceStore } from '@/stores/push-notification-preference-store';
+import {
+  broadcastSessionEvent,
+  initSessionSync,
+  shouldBroadcastStateChange,
+} from '@/lib/session-sync';
 import type { CreatorVerificationStatus } from '@/types';
 
 /**
@@ -71,6 +74,7 @@ interface AuthStore {
   setHasHydrated: (hasHydrated: boolean) => void;
   logout: () => void;
   login: (user: User, token: string) => void;
+  syncCrossTab: () => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -82,18 +86,31 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       hasHydrated: false,
 
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setToken: (token) => set({ token }),
+      setUser: (user) => {
+        set({ user, isAuthenticated: !!user });
+        if (shouldBroadcastStateChange()) {
+          broadcastSessionEvent('UPDATE_USER', { user });
+        }
+      },
+      setToken: (token) => {
+        set({ token });
+        updateSDKToken(token);
+      },
       setLoading: (loading) => set({ isLoading: loading }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
-      login: (user, token) =>
+      login: (user, token) => {
         set({
           user,
           token,
           isAuthenticated: true,
           isLoading: false,
-        }),
+        });
+        updateSDKToken(token);
+        if (shouldBroadcastStateChange()) {
+          broadcastSessionEvent('LOGIN', { user, token });
+        }
+      },
 
       logout: () => {
         cleanupPushSubscriptionOnLogout();
@@ -103,6 +120,16 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false,
           isLoading: false,
         });
+        updateSDKToken(null);
+        if (shouldBroadcastStateChange()) {
+          broadcastSessionEvent('LOGOUT');
+        }
+      },
+
+      syncCrossTab: () => {
+        if (shouldBroadcastStateChange()) {
+          broadcastSessionEvent('SYNC_STATE');
+        }
       },
     }),
     {
@@ -123,3 +150,9 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
+
+// Initialize cross-tab synchronization automatically in browser environments
+if (typeof window !== 'undefined') {
+  initSessionSync(useAuthStore);
+}
+

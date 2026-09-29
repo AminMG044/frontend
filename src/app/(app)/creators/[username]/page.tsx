@@ -24,6 +24,7 @@ import { CreatorVerificationBadge } from '@/components/shared/creator-verificati
 import { CreatorBio } from '@/components/sections/creator-bio';
 import { SubscriptionTiers } from '@/components/sections/subscription-tiers';
 import { SubscriberOnlyContent } from '@/components/sections/subscriber-only-content';
+import { ExclusiveContentFeed } from '@/components/sections/exclusive-content-feed';
 import { SupporterLeaderboard } from '@/components/sections/supporter-leaderboard';
 import { SupporterLoyaltyCard } from '@/components/sections/supporter-loyalty-card';
 import { CreatorLiveStreamSection } from '@/components/sections/creator-live-stream';
@@ -194,6 +195,13 @@ export default function CreatorProfilePage(): JSX.Element {
             <p className="mt-1 text-sm text-muted-foreground">Thanks for supporting this creator.</p>
           </div>
         </SubscriberOnlyContent>
+
+        {/* Creator Exclusive Tier-Locked Content */}
+        <ExclusiveContentFeed
+          creatorId={state.creator.id}
+          creatorName={state.creator.displayName || state.creator.username}
+          currentUserId={user?.id}
+        />
 
         {/* Supporter loyalty: earned badge, progress to next tier, opt-in */}
         {user && (
