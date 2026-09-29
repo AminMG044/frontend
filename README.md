@@ -114,12 +114,12 @@ src/
 
 ## Key Pages
 
-| Route | Purpose | Auth Required |
-|-------|---------|---------------|
-| `/` | Landing page with features | No |
-| `/creators` | Creator discovery & search | No |
-| `/creators/[username]` | Creator public profile | No |
-| `/creators/[username]/dashboard` | Creator earnings & wallet | Yes |
+| Route                            | Purpose                    | Auth Required |
+| -------------------------------- | -------------------------- | ------------- |
+| `/`                              | Landing page with features | No            |
+| `/creators`                      | Creator discovery & search | No            |
+| `/creators/[username]`           | Creator public profile     | No            |
+| `/creators/[username]/dashboard` | Creator earnings & wallet  | Yes           |
 
 ## Environment Variables
 
@@ -201,6 +201,7 @@ vercel --prod
 ### Environment Setup for Production
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
+
 - Environment variable configuration
 - Vercel setup steps
 - Health checks and monitoring
@@ -272,6 +273,13 @@ const tip = await sdk.createTip(payload);
    - See earnings overview card
    - Check transaction history table
    - Verify wallet management section
+
+## Documentation
+
+- 📘 [SDK Usage Patterns & Best Practices Guide](./docs/SDK_USAGE_PATTERNS.md) — Comprehensive guide on SDK initialization, configuration tuning, authentication lifecycles, error handling, pagination, and performance optimization.
+- 📡 [API Integration Guide](./docs/API_INTEGRATION_GUIDE.md) — Backend API integration reference, frontend-owned route definitions, and browser exports.
+- 🚀 [Deployment Guide](./DEPLOYMENT.md) — Production setup, environment configuration, and Vercel hosting.
+- 🎨 [Storybook Guide](./docs/STORYBOOK.md) — Component development and visual testing in isolation.
 
 ## Notes
 
