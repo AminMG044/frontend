@@ -289,4 +289,6 @@ For issues:
 2. Verify environment variables are set
 3. Check backend is running (NEXT_PUBLIC_API_URL)
 4. Review [DEPLOYMENT.md](./DEPLOYMENT.md) for production issues
-5. Contact: support@dorisio.dev
+5. Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common user issues
+6. Check [docs/DEVELOPER_TROUBLESHOOTING.md](./docs/DEVELOPER_TROUBLESHOOTING.md) for development issues
+7. Contact: support@dorisio.dev
