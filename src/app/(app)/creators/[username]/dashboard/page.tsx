@@ -23,6 +23,7 @@ import {
   TransactionTableSkeleton,
 } from '@/components/shared/creator-skeletons';
 import { CreatorVerificationBadge } from '@/components/shared/creator-verification-badge';
+import { PushNotificationPermissionPrompt } from '@/components/shared/push-notification-permission-prompt';
 import Link from 'next/link';
 import { SubscriptionManagement } from '@/components/sections/subscription-management';
 import { TipTierSettings } from '@/components/sections/tip-tier-settings';
@@ -126,6 +127,8 @@ function CreatorDashboardPageContent() {
           {liveConnected ? '● Live' : '● Offline'}
         </span>
       </div>
+
+      <PushNotificationPermissionPrompt />
 
       <SubscriptionManagement creatorId={username} />
       <TipTierSettings creatorId={username} />

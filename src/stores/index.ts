@@ -10,6 +10,7 @@ export { useAppStore } from './app-store';
 export type { Notification } from './app-store';
 
 export { useWalletPreferenceStore } from './wallet-preference-store';
+export { usePushNotificationPreferenceStore } from './push-notification-preference-store';
 export { useTipTierStore, DEFAULT_TIP_TIERS, MAX_RECENT_CUSTOM_AMOUNTS } from './tip-tier-store';
 export type { TipTierStore } from './tip-tier-store';
 export {

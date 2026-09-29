@@ -16,6 +16,7 @@ import { CreatorBioEditor } from '@/components/sections/creator-bio';
 import { SubscriptionSettings } from '@/components/sections/subscription-settings';
 import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { BadgeThresholdSettings } from '@/components/sections/badge-threshold-settings';
+import { PushNotificationToggle } from '@/components/shared/push-notification-toggle';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface Settings {
@@ -261,6 +262,10 @@ export default function SettingsPage(): JSX.Element {
             >
               Save Notification Settings
             </Button>
+
+            <div className="pt-4 border-t">
+              <PushNotificationToggle />
+            </div>
           </div>
         </Card>
 

@@ -9,6 +9,7 @@ This guide covers common issues users and developers may encounter with the Dori
 - [Browser Compatibility](#browser-compatibility)
 - [Mobile Issues](#mobile-issues)
 - [Development Issues](#development-issues)
+- [Developer-Specific Issues](#developer-specific-issues)
 - [FAQ](#faq)
 - [Contact Support](#contact-support)
 
@@ -227,6 +228,21 @@ npm run dev
 
 ---
 
+## Developer-Specific Issues
+
+For detailed development troubleshooting including:
+
+- Environment setup issues
+- Build and compilation errors
+- Testing failures
+- TypeScript issues
+- Performance debugging
+- Git workflow problems
+
+Please refer to the comprehensive [Developer Troubleshooting Guide](./docs/DEVELOPER_TROUBLESHOOTING.md).
+
+---
+
 ## FAQ
 
 ### General Questions
@@ -332,4 +348,4 @@ We welcome feature requests! To suggest improvements:
 
 ---
 
-Last updated: September 2026
+Last updated: September 29, 2026

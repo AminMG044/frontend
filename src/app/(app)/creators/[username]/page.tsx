@@ -27,6 +27,7 @@ import { SubscriberOnlyContent } from '@/components/sections/subscriber-only-con
 import { ExclusiveContentFeed } from '@/components/sections/exclusive-content-feed';
 import { SupporterLeaderboard } from '@/components/sections/supporter-leaderboard';
 import { SupporterLoyaltyCard } from '@/components/sections/supporter-loyalty-card';
+import { CreatorLiveStreamSection } from '@/components/sections/creator-live-stream';
 import { useCreatorSupporters } from '@/hooks/use-creator-supporters';
 import { useCreatorBadgeThresholds } from '@/hooks/use-badge-thresholds';
 import { useAuthStore } from '@/stores/auth-store';
@@ -183,6 +184,8 @@ export default function CreatorProfilePage(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {state.creator.liveStream && <CreatorLiveStreamSection stream={state.creator.liveStream} />}
 
       {/* Content Section */}
       <div className="max-w-4xl mx-auto px-4 py-12">
