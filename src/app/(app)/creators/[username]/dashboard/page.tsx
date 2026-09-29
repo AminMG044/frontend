@@ -28,7 +28,9 @@ import Link from 'next/link';
 import { SubscriptionManagement } from '@/components/sections/subscription-management';
 import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { ScheduledTipsDashboard } from '@/components/sections/scheduled-tips-dashboard';
+import { CreatorCollaborations } from '@/components/sections/creator-collaborations';
 import { ExclusiveContentCreatorPanel } from '@/components/sections/exclusive-content-creator-panel';
+import { CreatorAnnouncementPanel } from '@/components/sections/creator-announcement-panel';
 import { fetchCreatorAnalytics } from '@/hooks/use-creator-analytics';
 
 export default function CreatorDashboardPage() {
@@ -133,7 +135,9 @@ function CreatorDashboardPageContent() {
       <SubscriptionManagement creatorId={username} />
       <TipTierSettings creatorId={username} />
       <ScheduledTipsDashboard creatorId={username} />
+      <CreatorCollaborations username={username} userId={user.id} userName={user.name} />
       <ExclusiveContentCreatorPanel creatorId={username} />
+      <CreatorAnnouncementPanel creatorId={username} />
 
       <section
         aria-labelledby="creator-verification-heading"

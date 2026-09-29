@@ -27,6 +27,8 @@ The frontend is the **dumb UI layer** that:
 - **SDK:** Dorisio-sdk (from workspace)
 - **Deployment:** Vercel
 
+For store organization, selectors, persistence, async actions, debugging, and migration guidance, see the [Zustand state management guide](docs/ZUSTAND_GUIDE.md).
+
 ## Features
 
 - ✅ User authentication (sign up / log in)

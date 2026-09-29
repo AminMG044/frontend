@@ -50,3 +50,48 @@ Analytics sections include `AnalyticsDateRangePicker`, `AnalyticsSummaryCards`, 
 3. Use the shared primitives and theme tokens.
 4. Document public props, variants, keyboard behaviour, and a short example here.
 5. Run `npm run lint`, `npm run type-check`, and the relevant Vitest test before opening a PR.
+
+## Performance benchmarking
+
+Component render performance is measured automatically so slow components and regressions are caught before they reach production.
+
+The benchmark suite lives in `benchmarks/components/` and runs with Vitest's `bench` mode via `@vitest/bench`. Each benchmark mounts a component with realistic props and records median render time and operations per second.
+
+```tsx\nimport { bench } from 'vitest';
+import { render } from '@testing-library/react';
+import { Button } from '@/components/ui';
+
+bench('Button render', () => {
+  render(<Button>Send tip</Button>);
+});
+```
+
+Run the benchmarks locally with `npm run bench`. The CI pipeline runs the same suite on every pull request and compares results against the committed baseline in `benchmarks/baseline.json`.
+
+### Baseline metrics
+
+Baseline median render times (identifier in `benchmarks/baseline.json`):
+
+| Component | Baseline median render (ms) | Threshold (ms) |
+| --- | --- | --- |
+| `Button` | 0.15 | 0.50 |
+| `Badge` | 0.10 | 0.40 |
+| `Input` | 0.18 | 0.50 |
+| `Label` | 0.08 | 0.30 |
+| `Card` | 0.22 | 0.60 |
+| `Avatar` | 0.25 | 0.60 |
+| `LoadingSpinner` | 0.12 | 0.40 |
+| `Skeleton` | 0.14 | 0.40 |
+| `EmptyState` | 0.30 | 0.80 |
+| `ErrorMessage` | 0.20 | 0.60 |
+| `CreatorBio` | 0.40 | 1.00 |
+| `CreatorSearchBar` | 0.45 | 1.20 |
+| `AnalyticsSummaryCards` | 0.60 | 1.50 |
+| `TopTippersTable` | 0.80 | 2.00 |
+| `SubscriptionTiers` | 0.70 | 1.80 |
+
+Thresholds are defined in `benchmarks/thresholds.json`. A benchmark fails the CI gate when its median render time exceeds the threshold or regresses more than 20% over the committed baseline.
+
+### Performance dashboard
+
+Benchmark results are uploaded as a CI artifact and published to the performance dashboard at `/performance/components`. The dashboard shows the latest median render time per component, the delta against the baseline, and the trend across recent commits so slow components are identified at a glance.

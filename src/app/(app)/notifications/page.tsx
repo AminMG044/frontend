@@ -18,7 +18,14 @@ export default function NotificationsPage() {
   const filteredNotifications =
     selectedType === 'all' ? notifications : filterByType(selectedType);
 
-  const types: (NotificationType | 'all')[] = ['all', 'tip', 'subscription', 'milestone', 'system'];
+  const types: (NotificationType | 'all')[] = [
+    'all',
+    'tip',
+    'subscription',
+    'milestone',
+    'collaboration',
+    'system',
+  ];
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
@@ -30,6 +37,8 @@ export default function NotificationsPage() {
         return '🎉';
       case 'system':
         return '🔔';
+      case 'collaboration':
+        return '🤝';
       default:
         return '📬';
     }

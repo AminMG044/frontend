@@ -25,12 +25,14 @@ import { CreatorBio } from '@/components/sections/creator-bio';
 import { SubscriptionTiers } from '@/components/sections/subscription-tiers';
 import { SubscriberOnlyContent } from '@/components/sections/subscriber-only-content';
 import { ExclusiveContentFeed } from '@/components/sections/exclusive-content-feed';
+import { AnnouncementFeed } from '@/components/sections/announcement-feed';
 import { SupporterLeaderboard } from '@/components/sections/supporter-leaderboard';
 import { SupporterLoyaltyCard } from '@/components/sections/supporter-loyalty-card';
 import { CreatorLiveStreamSection } from '@/components/sections/creator-live-stream';
 import { useCreatorSupporters } from '@/hooks/use-creator-supporters';
 import { useCreatorBadgeThresholds } from '@/hooks/use-badge-thresholds';
 import { useAuthStore } from '@/stores/auth-store';
+import { getPublicCollaborations } from '@/lib/collaborations';
 
 interface CreatorPageState {
   creator: Creator | null;
@@ -63,6 +65,7 @@ export default function CreatorProfilePage(): JSX.Element {
         .filter((tx) => tx.senderId === user.id && tx.status === 'confirmed')
         .reduce((sum, tx) => sum + tx.amount, 0)
     : 0;
+  const collaborations = state.creator ? getPublicCollaborations(state.creator.id) : [];
 
   // Fetch creator profile
   useEffect(() => {
@@ -196,12 +199,52 @@ export default function CreatorProfilePage(): JSX.Element {
           </div>
         </SubscriberOnlyContent>
 
+        {collaborations.length > 0 && (
+          <section className="mb-12" aria-labelledby="creator-collaborations-heading">
+            <h2 id="creator-collaborations-heading" className="mb-4 text-xl font-bold">
+              Guest appearances
+            </h2>
+            <ul className="divide-y border-y">
+              {collaborations.map((collaboration) => {
+                const isInviter = collaboration.inviterId === state.creator!.id;
+                const partnerUsername = isInviter
+                  ? collaboration.inviteeUsername
+                  : collaboration.inviterUsername;
+                const partnerName = isInviter
+                  ? collaboration.inviteeName
+                  : collaboration.inviterName;
+                const share = isInviter
+                  ? collaboration.inviterShare
+                  : collaboration.inviteeShare;
+
+                return (
+                  <li key={collaboration.id} className="flex flex-wrap items-center justify-between gap-2 py-4">
+                    <Link href={`/creators/${partnerUsername}`} className="font-medium hover:underline">
+                      {partnerName} <span className="text-sm text-muted-foreground">@{partnerUsername}</span>
+                    </Link>
+                    <span className="text-sm text-muted-foreground">
+                      Agreed share: {share}% · Started {formatDate(collaboration.acceptedAt || collaboration.createdAt)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
         {/* Creator Exclusive Tier-Locked Content */}
         <ExclusiveContentFeed
           creatorId={state.creator.id}
           creatorName={state.creator.displayName || state.creator.username}
           currentUserId={user?.id}
         />
+
+        {/* Creator announcements / bulletin board for followers */}
+        <div className="mt-12">
+          <AnnouncementFeed
+            creatorId={state.creator.id}
+            creatorName={state.creator.displayName || state.creator.username}
+          />
+        </div>
 
         {/* Supporter loyalty: earned badge, progress to next tier, opt-in */}
         {user && (
