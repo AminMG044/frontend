@@ -14,7 +14,9 @@ import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 import { CreatorBioEditor } from '@/components/sections/creator-bio';
 import { SubscriptionSettings } from '@/components/sections/subscription-settings';
+import { TipTierSettings } from '@/components/sections/tip-tier-settings';
 import { BadgeThresholdSettings } from '@/components/sections/badge-threshold-settings';
+import { PushNotificationToggle } from '@/components/shared/push-notification-toggle';
 import { useAuthStore } from '@/stores/auth-store';
 import { LanguageSelector } from '@/lib/i18n';
 
@@ -184,6 +186,7 @@ export default function SettingsPage(): JSX.Element {
         </Card>
 
         {user?.username && <SubscriptionSettings creatorId={user.username} />}
+        {user?.username && <TipTierSettings creatorId={user.username} />}
 
         {user?.username && <BadgeThresholdSettings creatorId={user.username} />}
 
@@ -265,6 +268,10 @@ export default function SettingsPage(): JSX.Element {
             >
               Save Notification Settings
             </Button>
+
+            <div className="pt-4 border-t">
+              <PushNotificationToggle />
+            </div>
           </div>
         </Card>
 

@@ -39,6 +39,15 @@ export interface CreatorPortfolio {
   externalLinks: ExternalLink[];
 }
 
+export interface CreatorLiveStream {
+  platform: 'twitch' | 'youtube';
+  channelUrl: string;
+  isLive: boolean;
+  viewerCount?: number;
+  videoId?: string;
+  replayUrl?: string;
+}
+
 /**
  * Creator profile (extended from SDK)
  */
@@ -48,6 +57,7 @@ export interface Creator {
   username: string;
   displayName: string;
   bio?: string;
+  category?: string;
   avatar?: string;
   verified: boolean;
   verificationStatus?: CreatorVerificationStatus;
@@ -58,7 +68,17 @@ export interface Creator {
   totalEarnings: number;
   pendingBalance: number;
   createdAt: string;
+  tipTiers?: number[];
   portfolio?: CreatorPortfolio;
+  socialLinks?: SocialLinks;
+  liveStream?: CreatorLiveStream;
+}
+
+export interface SocialLinks {
+  twitter?: string;
+  youtube?: string;
+  instagram?: string;
+  tiktok?: string;
 }
 
 /**
@@ -87,6 +107,34 @@ export interface Tip {
   transactionHash?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+/**
+ * Scheduled Tip Frequency
+ */
+export type ScheduledTipFrequency = 'once' | 'daily' | 'weekly' | 'monthly';
+
+/**
+ * Scheduled Tip Status
+ */
+export type ScheduledTipStatus = 'pending' | 'executed' | 'cancelled';
+
+/**
+ * Scheduled Tip
+ */
+export interface ScheduledTip {
+  id: string;
+  creatorId: string;
+  creatorName?: string;
+  amount: number;
+  walletId?: string;
+  message?: string;
+  scheduledDate: string;
+  frequency: ScheduledTipFrequency;
+  status: ScheduledTipStatus;
+  createdAt: string;
+  executedAt?: string;
+  cancelledAt?: string;
 }
 
 /**
@@ -162,4 +210,38 @@ export interface Notification {
   read: boolean;
   createdAt: string;
   data?: Record<string, unknown>;
+}
+
+/**
+ * Activity Feed Types
+ */
+export type ActivityType = 'announcement' | 'tip' | 'verification' | 'live' | 'content';
+
+export interface ActivityFeedItem {
+  id: string;
+  type: ActivityType;
+  creatorId: string;
+  creatorName: string;
+  creatorAvatar?: string;
+  title: string;
+  description?: string;
+  amount?: number;
+  isPublic?: boolean;
+  createdAt: string;
+  data?: Record<string, unknown>;
+}
+
+export interface ActivityFeedResponse {
+  items: ActivityFeedItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface ActivityFeedFilters {
+  type?: ActivityType;
+  creatorId?: string;
+  startDate?: string;
+  endDate?: string;
 }

@@ -14,6 +14,7 @@ import { RouteTracker } from '@/components/route-tracker';
 import { useAuthStore } from '@/stores/auth-store';
 import { setMonitoringUser } from '@/lib/monitoring';
 import { I18nProvider } from '@/lib/i18n';
+import { registerServiceWorker } from '@/lib/push-notifications';
 
 const CompatibleDorisioProvider = DorisioProvider as unknown as ComponentType<{
   client: DorisioClient;
@@ -56,6 +57,16 @@ export function Providers({ children }: { children: ReactNode }): JSX.Element {
   useEffect(() => {
     setMonitoringUser(user ? { id: user.id, email: user.email, username: user.username } : null);
   }, [user]);
+
+  // Register the push notification service worker as soon as the app boots.
+  // Registration alone is silent (no permission prompt, no subscription) -
+  // it just makes the worker available so that a later subscribe() call
+  // (from the dashboard prompt or settings toggle) doesn't have to wait on
+  // registration first. Errors are logged and swallowed inside
+  // registerServiceWorker() itself so this never blocks app boot.
+  useEffect(() => {
+    void registerServiceWorker();
+  }, []);
 
   if (!hasHydrated) {
     return (
