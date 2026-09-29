@@ -9,6 +9,11 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    benchmark: {
+      include: ['src/**/*.bench.ts', 'src/**/*.bench.tsx'],
+      reporters: ['default', 'json'],
+      outputFile: './benchmarks/results.json',
+    },
   },
   resolve: {
     alias: {
