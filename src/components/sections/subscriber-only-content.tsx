@@ -1,6 +1,6 @@
 'use client';
 
-import { LockKeyhole } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { SubscriberBadge } from '@/components/shared/subscriber-badge';
 import { useSubscriptions } from '@/hooks/use-subscriptions';
@@ -25,7 +25,7 @@ export function SubscriberOnlyContent({ creatorId, subscriberId, children }: Sub
 
   return (
     <Card className="mt-10 flex items-center gap-4 border-dashed p-6" aria-label="Subscriber-only content locked">
-      <LockKeyhole className="h-6 w-6 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <Lock className="h-6 w-6 shrink-0 text-muted-foreground" aria-hidden="true" />
       <div>
         <h2 className="font-semibold">Subscriber-only content</h2>
         <p className="text-sm text-muted-foreground">Subscribe to unlock this creator&apos;s exclusive posts.</p>

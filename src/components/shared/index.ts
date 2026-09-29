@@ -23,3 +23,5 @@ export {
 } from './creator-verification-badge';
 
 export { SupporterBadge, type SupporterBadgeProps } from './supporter-badge';
+
+export { PWAInstallPrompt } from './pwa-install-prompt';

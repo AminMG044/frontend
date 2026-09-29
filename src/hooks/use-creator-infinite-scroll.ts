@@ -14,6 +14,7 @@ import type { Creator } from '@/types';
 export type CreatorSortOption = 'trending' | 'newest' | 'alphabetical' | 'earnings';
 
 export interface CreatorSearchFilters {
+  category: string;
   search: string;
   verifiedOnly: boolean;
   minEarnings: string;
@@ -22,6 +23,7 @@ export interface CreatorSearchFilters {
 }
 
 const DEFAULT_FILTERS: CreatorSearchFilters = {
+  category: '',
   search: '',
   verifiedOnly: false,
   minEarnings: '',
@@ -34,6 +36,7 @@ const DEBOUNCE_MS = 300;
 
 function filtersFromSearchParams(params: URLSearchParams): CreatorSearchFilters {
   return {
+    category: params.get('category') || DEFAULT_FILTERS.category,
     search: params.get('search') || DEFAULT_FILTERS.search,
     verifiedOnly: params.get('verified') === 'true',
     minEarnings: params.get('minEarnings') || DEFAULT_FILTERS.minEarnings,
@@ -72,6 +75,7 @@ function applyClientFilters(creators: Creator[], filters: CreatorSearchFilters):
         (c.bio && c.bio.toLowerCase().includes(query))
     );
   }
+  if (filters.category) result = result.filter((creator) => creator.category === filters.category);
 
   if (filters.minEarnings !== '') {
     const min = parseFloat(filters.minEarnings);
@@ -120,6 +124,7 @@ export function useCreatorInfiniteScroll(): {
     const handle = setTimeout(() => {
       const params = new URLSearchParams();
       if (filters.search) params.set('search', filters.search);
+      if (filters.category) params.set('category', filters.category);
       if (filters.verifiedOnly) params.set('verified', 'true');
       if (filters.minEarnings) params.set('minEarnings', filters.minEarnings);
       if (filters.maxEarnings) params.set('maxEarnings', filters.maxEarnings);

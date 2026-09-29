@@ -75,4 +75,22 @@ describe('CreatorProfilePage', () => {
     expect(screen.getByText('A helpful creator')).toBeInTheDocument();
     await waitFor(() => expect(getCreatorProfile).toHaveBeenCalledWith('creator-one'));
   });
+
+  it('renders the configured live stream on the creator profile', async () => {
+    getCreatorProfile.mockResolvedValue({
+      ...creator,
+      liveStream: {
+        platform: 'twitch',
+        channelUrl: 'https://www.twitch.tv/creator_one',
+        isLive: true,
+        viewerCount: 42,
+      },
+    });
+
+    render(<CreatorProfilePage />);
+
+    expect(await screen.findByTitle('Twitch live video')).toBeInTheDocument();
+    expect(screen.getByText('LIVE')).toBeInTheDocument();
+    expect(screen.getByLabelText('42 viewers')).toBeInTheDocument();
+  });
 });

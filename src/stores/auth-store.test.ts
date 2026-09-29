@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the SDK client sync function so we can assert it's called with the
 // right token, and so this test doesn't depend on the real `dorisio-sdk`
@@ -133,6 +133,68 @@ describe('useAuthStore persistence and hydration', () => {
 
     expect(useAuthStore.getState().token).toBeNull();
     expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+});
+
+describe('useAuthStore logout push notification cleanup', () => {
+  afterEach(() => {
+    // @ts-expect-error - deliberately removing the stub between tests
+    delete navigator.serviceWorker;
+    // @ts-expect-error - deliberately removing the stub between tests
+    delete window.PushManager;
+    // @ts-expect-error - deliberately removing the stub between tests
+    delete window.Notification;
+  });
+
+  it('unsubscribes from push and clears the push opt-in preference on logout', async () => {
+    Object.defineProperty(window, 'PushManager', {
+      configurable: true,
+      writable: true,
+      value: function PushManager() {},
+    });
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      writable: true,
+      value: { permission: 'granted', requestPermission: vi.fn() },
+    });
+    const unsubscribe = vi.fn().mockResolvedValue(true);
+    const getRegistration = vi.fn().mockResolvedValue({
+      pushManager: { getSubscription: vi.fn().mockResolvedValue({ unsubscribe }) },
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      writable: true,
+      value: { getRegistration },
+    });
+
+    const { useAuthStore } = await import('./auth-store');
+    const { usePushNotificationPreferenceStore } = await import(
+      './push-notification-preference-store'
+    );
+    usePushNotificationPreferenceStore.getState().setOptedIn(true);
+
+    useAuthStore
+      .getState()
+      .login({ id: '1', email: 'a@b.com', username: 'alice', role: 'fan' }, 'token-123');
+    useAuthStore.getState().logout();
+
+    await vi.waitFor(() => {
+      expect(unsubscribe).toHaveBeenCalled();
+    });
+    await vi.waitFor(() => {
+      expect(usePushNotificationPreferenceStore.getState().optedIn).toBe(false);
+    });
+  });
+
+  it('logs out synchronously without waiting on push cleanup, and does not throw when serviceWorker is unavailable', async () => {
+    const { useAuthStore } = await import('./auth-store');
+
+    useAuthStore
+      .getState()
+      .login({ id: '1', email: 'a@b.com', username: 'alice', role: 'fan' }, 'token-123');
+
+    expect(() => useAuthStore.getState().logout()).not.toThrow();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });
