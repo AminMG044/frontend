@@ -1,0 +1,42 @@
+{
+  "name": "Dorisio - Support Your Favorite Creators",
+  "short_name": "Dorisio",
+  "description": "Tip creators directly on the Stellar network with low fees and instant confirmation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "social", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Send Tip",
+      "short_name": "Tip",
+      "description": "Send a tip to a creator",
+      "url": "/creators",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your creator dashboard",
+      "url": "/creators/dashboard",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
