@@ -6,7 +6,40 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { updateSDKToken } from '@/lib/sdk-client';
+import { unsubscribeFromPush } from '@/lib/push-notifications';
+import { usePushNotificationPreferenceStore } from '@/stores/push-notification-preference-store';
 import type { CreatorVerificationStatus } from '@/types';
+
+/**
+ * Best-effort push notification cleanup on logout. Not awaited by
+ * `logout()` (which stays synchronous, matching the rest of this store's
+ * actions) - the unsubscribe + preference reset run in the background so a
+ * slow/failing unsubscribe never blocks sign-out.
+ *
+ * No UI in this codebase currently calls `useAuthStore.logout` yet (there's
+ * no wired-up logout button), so this is hooked directly into the store
+ * action itself: whichever UI eventually calls `logout()`, push cleanup
+ * happens automatically alongside it rather than needing to be remembered
+ * at every future call site.
+ */
+function cleanupPushSubscriptionOnLogout(): void {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+    return;
+  }
+
+  navigator.serviceWorker
+    .getRegistration('/service-worker.js')
+    .then((registration) => {
+      if (!registration) return;
+      return unsubscribeFromPush(registration);
+    })
+    .catch((error) => {
+      console.error('Failed to unsubscribe from push notifications on logout:', error);
+    })
+    .finally(() => {
+      usePushNotificationPreferenceStore.getState().setOptedIn(false);
+    });
+}
 
 interface User {
   id: string;
@@ -62,13 +95,15 @@ export const useAuthStore = create<AuthStore>()(
           isLoading: false,
         }),
 
-      logout: () =>
+      logout: () => {
+        cleanupPushSubscriptionOnLogout();
         set({
           user: null,
           token: null,
           isAuthenticated: false,
           isLoading: false,
-        }),
+        });
+      },
     }),
     {
       name: 'Dorisio-auth',
