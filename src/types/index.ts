@@ -201,3 +201,80 @@ export interface Notification {
   createdAt: string;
   data?: Record<string, unknown>;
 }
+
+/**
+ * Content Moderation Types
+ */
+export type ModerationItemType = 'comment' | 'tip_message' | 'announcement';
+export type ModerationStatus = 'pending' | 'approved' | 'rejected' | 'hidden' | 'deleted';
+export type ModerationAction = 'block_user' | 'delete_content' | 'hide_content' | 'warn_user';
+export type ReportReason = 'spam' | 'harassment' | 'inappropriate' | 'scam' | 'other';
+
+export interface ModerationItem {
+  id: string;
+  type: ModerationItemType;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  creatorId: string;
+  status: ModerationStatus;
+  createdAt: string;
+  updatedAt?: string;
+  reportCount?: number;
+  isReported?: boolean;
+}
+
+export interface ModerationActionLog {
+  id: string;
+  itemId: string;
+  action: ModerationAction;
+  performedBy: string;
+  performedByName: string;
+  targetUserId?: string;
+  targetUserName?: string;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface UserBlock {
+  id: string;
+  creatorId: string;
+  blockedUserId: string;
+  blockedUserName: string;
+  blockedUserAvatar?: string;
+  reason?: string;
+  createdAt: string;
+  blockedAt: string;
+}
+
+export interface ContentReport {
+  id: string;
+  itemId: string;
+  itemType: ModerationItemType;
+  reportedBy: string;
+  reportedByName: string;
+  reason: ReportReason;
+  description?: string;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  resolution?: string;
+}
+
+export interface ModerationFilters {
+  status?: ModerationStatus;
+  type?: ModerationItemType;
+  startDate?: string;
+  endDate?: string;
+  reportedOnly?: boolean;
+}
+
+export interface ModerationStats {
+  totalItems: number;
+  pendingItems: number;
+  blockedUsers: number;
+  reportsThisWeek: number;
+  actionsThisMonth: number;
+}
